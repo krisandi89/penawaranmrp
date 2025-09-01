@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Arial:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: 'Arial', sans-serif !important;
             background-color: #f0f2f5;
         }
         
@@ -30,7 +30,7 @@
         }
 
         .page {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif !important;
             background-color: white;
             box-shadow: 0 4px 12px rgba(0,0,0,0.4);
             width: 21cm;
@@ -63,31 +63,32 @@
         }
 
         .page-content-inner {
-            font-size: 10pt;
-            line-height: 1.5;
+            font-size: 10pt !important;
+            line-height: 1.5 !important;
+            font-family: 'Arial', sans-serif !important;
         }
 
         /* Kelas untuk mencegah elemen terpotong */
         .avoid-break {
-            page-break-inside: avoid;
-            break-inside: avoid;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
             overflow: hidden;
         }
 
         /* Pastikan header dan footer tidak terpotong */
         h3, h4, table, footer, .signature-section {
-            page-break-inside: avoid;
-            break-inside: avoid;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
         }
 
         /* Tambahkan margin bawah pada elemen untuk mencegah konten terlalu dekat dengan batas halaman */
         p, div, table {
-            margin-bottom: 0.5cm;
+            margin-bottom: 0.5cm !important;
         }
 
         /* Tambahkan space untuk footer */
         .page-content-inner > *:last-child {
-            margin-bottom: 2cm;
+            margin-bottom: 2cm !important;
         }
 
         /* Print styles */
@@ -175,7 +176,6 @@
                             <label for="hal" class="block text-sm font-medium text-gray-700">Hal</label>
                             <select id="hal" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                                 <option>Penawaran Harga Material Geomembrane & Instalasi</option>
-                                <option>Penawaran Harga Material Geomembrane</option>
                                 <option value="custom">Lainnya...</option>
                             </select>
                             <input type="text" id="hal-custom" class="mt-2 hidden w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Ketik perihal surat di sini">
@@ -208,12 +208,7 @@
                     <div class="space-y-4">
                         <div>
                             <label for="kondisi-penawaran" class="block text-sm font-medium text-gray-700">Kondisi Penawaran</label>
-                            <select id="kondisi-penawaran" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                                <option value="material_dan_instalasi">Template: Material & Instalasi</option>
-                                <option value="material_saja">Template: Material Saja</option>
-                                <option value="custom">Custom...</option>
-                            </select>
-                            <textarea id="kondisi-penawaran-text" rows="8" class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                            <textarea id="kondisi-penawaran-text" rows="8" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
                         </div>
                         <div>
                             <label for="metode-pembayaran" class="block text-sm font-medium text-gray-700">Metode Pembayaran</label>
@@ -270,23 +265,10 @@
                 title: 'Design and Project Manager',
                 contact: '+62-821-1012-8965',
                 signatureImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgODAiPjxzdHlsZT4uc3Ryb2tlIHtzdHJva2U6IzAwMDtmaWxsOm5vbmU7c3Ryb2tlLXdpZHRoOjI7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO308L3N0eWxlPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik0xMCw1MEMxNSwzMCwzMCwxMCw1MCwyMGMxNSw4LDQwLTUsNTAtNWMxNSwwLDMwLDE1LDQwLDQwIEMxODAsNTUsMTgwLDMwLDE5MCw0MCIvPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik04MCw0MEw5MCw1MEwxMDAsNDBMMTEwLDUwIi8+PC9zdmc+'
-            },
-            isparmo: {
-                name: 'Ir. Isparmo, IPM',
-                title: 'Marketing Manager',
-                contact: '0812 108 3060',
-                signatureImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgODAiPjxzdHlsZT4uc3Ryb2tlIHtzdHJva2U6IzAwMDtmaWxsOm5vbmU7c3Ryb2tlLXdpZHRoOjI7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO308L3N0eWxlPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik0xMCw2MEMyMCwzMCw0MCwxMCw2MCwyMGMxMCw1LDMwLTUsNDUtMTUgYzE1LTEwLDMwLDAsNDAsMjAgQzE2NSw0NSwxODAsMjAsMTkwLDMwIi8+PHBhdGggY2xhc3M9InN0cm9rZSIgZD0iTTgwLDUwTDkwLDYwTDEwMCw1MEwxMTAsNjAiLz48L3N2Zz4='
-            },
-            nuruzzaman: {
-                name: 'Ir. Nuruzzaman',
-                title: 'Technical & Marketing Manager',
-                contact: '0811-877-022',
-                signatureImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgODAiPjxzdHlsZT4uc3Ryb2tlIHtzdHJva2U6IzAwMDtmaWxsOm5vbmU7c3Ryb2tlLXdpZHRoOjI7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO308L3N0eWxlPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik0xMCw0MEMyMCw2MCw0MCw3MCw2MCw1MCBDODAsMzAsMTAwLDMwLDEyMCw1MCBDMTQwLDcwLDE2MCw2MCwxODAsNDUiLz48L3N2Zz4='
             }
         };
 
-        const conditionTemplates = {
-            material_dan_instalasi: `• Harga Material Locco Gudang Multibangun di Bitung, Tangerang.
+        const conditionTemplate = `• Harga Material Locco Gudang Multibangun di Bitung, Tangerang.
 • Harga Material dan Instalasi belum termasuk PPN 11%.
 • Harga Instalasi tidak termasuk genset 10 kVA & dewatering pump.
 • Harga Instalasi tidak termasuk persiapan lahan dan pekerjaan tanah seperti penggalian, penimbunan dan pembuatan angkur.
@@ -294,20 +276,12 @@
 • Harga Instalasi tidak termasuk peralatan tambahan seperti plat strip, baut, dll bila diperlukan.
 • Harga Instalasi tidak termasuk biaya langsir Material.
 • Harga Instalasi sudah termasuk akomodasi, transportasi, penginapan dan tes kesehatan untuk installer.
-• Harga Instalasi dengan asumsi pekerjaan dilakukan bukan pada musim hujan.`,
-            material_saja: `• Harga Material Locco Gudang Multibangun di Bitung, Tangerang.
-• Harga Material belum termasuk PPN 11%.
-• Harga tidak termasuk biaya ekspedisi/pengiriman.
-• Ketersediaan stok harap dikonfirmasi sebelum melakukan pemesanan.`
-        };
+• Harga Instalasi dengan asumsi pekerjaan dilakukan bukan pada musim hujan.`;
 
-        const paymentTemplates = {
-            default: `• Material: Cash in Advance.\n• Instalasi: DP 50%, sisa pelunasan sesuai dengan prosentase progress pekerjaan secara bertahap.`
-        };
+        const paymentTemplate = `• Material: Cash in Advance.
+• Instalasi: DP 50%, sisa pelunasan sesuai dengan prosentase progress pekerjaan secara bertahap.`;
         
-        const deliveryTermTemplates = {
-            default: `Pengambilan Material setelah Purchase Order dan pembayaran diterima.`
-        };
+        const deliveryTermTemplate = `Pengambilan Material setelah Purchase Order dan pembayaran diterima.`;
 
         // --- HELPER FUNCTIONS ---
         const formatCurrency = (number) => {
@@ -480,19 +454,19 @@
             if (e.target.value === 'custom') customInput.focus();
         });
 
-        document.getElementById('kondisi-penawaran').addEventListener('change', (e) => {
-            const textArea = document.getElementById('kondisi-penawaran-text');
-            textArea.value = (e.target.value === 'custom') ? '' : conditionTemplates[e.target.value];
-            if (e.target.value === 'custom') textArea.focus();
-        });
-
         document.getElementById('generate-pdf-modal').addEventListener('click', () => {
             const element = document.getElementById('preview-container');
             const opt = {
               margin:       0,
               filename:     `Penawaran - ${document.getElementById('nama-perusahaan').value.replace(/[^a-z0-9]/gi, '_') || 'file'}.pdf`,
               image:        { type: 'jpeg', quality: 0.98 },
-              html2canvas:  { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff' },
+              html2canvas:  { 
+                  scale: 2, 
+                  useCORS: true, 
+                  allowTaint: true,
+                  letterRendering: true, 
+                  backgroundColor: '#ffffff' 
+              },
               jsPDF:        { unit: 'cm', format: 'a4', orientation: 'portrait' }
             };
             html2pdf().from(element).set(opt).save();
@@ -522,15 +496,13 @@
             });
             signatorySelect.value = 'krisandi';
 
-            document.getElementById('kondisi-penawaran').value = 'material_dan_instalasi';
-            document.getElementById('kondisi-penawaran-text').value = conditionTemplates.material_dan_instalasi;
-            document.getElementById('metode-pembayaran-text').value = paymentTemplates.default;
-            document.getElementById('term-pengambilan-text').value = deliveryTermTemplates.default;
+            // Hanya menggunakan 1 template saja
+            document.getElementById('kondisi-penawaran-text').value = conditionTemplate;
+            document.getElementById('metode-pembayaran-text').value = paymentTemplate;
+            document.getElementById('term-pengambilan-text').value = deliveryTermTemplate;
 
-            // Tambahkan beberapa item untuk test paginasi
-            for(let i=0; i<10; i++) { 
-                addItemRow(); 
-            }
+            // Hanya menambahkan 1 item saja (tidak 10 seperti sebelumnya)
+            addItemRow();
         }
 
         init();
