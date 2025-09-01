@@ -102,7 +102,7 @@
                 <div class="p-4 border-b flex justify-between items-center bg-gray-50">
                     <h3 class="text-xl font-semibold">Pratinjau Dokumen</h3>
                     <div>
-                        <button id="docx-download-button" onclick="app.downloadGeneratedDOCX()" class="bg-teal-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-teal-700 shadow-sm mr-2" disabled>Mempersiapkan...</button>
+                        <button id="docx-download-button" onclick="app.downloadGeneratedDOCX()" class="bg-teal-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-teal-700 shadow-sm mr-2 disabled:bg-gray-400" disabled>Mempersiapkan...</button>
                         <button onclick="document.getElementById('docx-preview-modal').classList.remove('active')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
                     </div>
                 </div>
@@ -319,25 +319,9 @@
                 document.getElementById('prompt-modal').classList.add('active');
                 const okBtn = document.getElementById('prompt-ok');
                 const cancelBtn = document.getElementById('prompt-cancel');
-                
-                const close = () => {
-                    document.getElementById('prompt-modal').classList.remove('active');
-                    okBtn.replaceWith(okBtn.cloneNode(true));
-                    cancelBtn.replaceWith(cancelBtn.cloneNode(true));
-                };
-                
-                okBtn.addEventListener('click', () => {
-                    if (input.value.trim()){
-                        callback(input.value.trim());
-                        close();
-                    } else {
-                        this.showToast('Nama tidak boleh kosong.', 'error');
-                    }
-                });
-                cancelBtn.addEventListener('click', () => {
-                    callback(null);
-                    close();
-                });
+                const close = () => { document.getElementById('prompt-modal').classList.remove('active'); okBtn.replaceWith(okBtn.cloneNode(true)); cancelBtn.replaceWith(cancelBtn.cloneNode(true)); };
+                okBtn.addEventListener('click', () => { if (input.value.trim()){ callback(input.value.trim()); close(); } else { this.showToast('Nama tidak boleh kosong.', 'error'); } });
+                cancelBtn.addEventListener('click', () => { callback(null); close(); });
             },
             async showDOCXPreview() {
                 const quotation = this.saveQuotation(false);
@@ -355,8 +339,7 @@
                 iframe.srcdoc = contentHtml;
                 
                 try {
-                    const fileBuffer = await htmlToDocx.asBlob(contentHtml);
-                    this.state.currentDocxBlob = fileBuffer;
+                    this.state.currentDocxBlob = await htmlToDocx.asBlob(contentHtml);
                     downloadBtn.disabled = false;
                     downloadBtn.textContent = 'Unduh DOCX';
                     this.showToast('Pratinjau siap. Anda bisa mengunduh file.');
@@ -420,11 +403,11 @@
                 const signatureImageBase64 = marketingPerson ? await this.imageToBase64(marketingPerson.signatureImg) : '';
 
                 return `
-                    <!DOCTYPE html><html><head><style>body { font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4; } p, div, h4 { margin: 0; padding: 0; } </style></head>
+                    <!DOCTYPE html><html><head><style>body { font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4; color: #000; } p, div, h4 { margin: 0; padding: 0; } </style></head>
                     <body>
                         ${headerImageBase64 ? `<div style="text-align:center;"><img src="${headerImageBase64}" style="width:100%; max-width:650px;" /></div>` : ''}
                         <div style="margin-top: -2.8cm; padding: 0 1cm;">
-                            <table style="width: 100%; border: none;">
+                            <table style="width: 100%; border: none; font-size: 10pt;">
                                 <tr>
                                     <td style="text-align: left;">No. <b>${quotation.number}</b></td>
                                     <td style="text-align: right;">Jakarta, ${this.formatDate(quotation.date)}</td>
