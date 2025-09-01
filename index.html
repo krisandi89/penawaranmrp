@@ -1,20 +1,585 @@
-{\rtf1\ansi\ansicpg1252\cocoartf2822
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Generator Surat Penawaran Harga</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Arial:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f2f5;
+        }
+        
+        #preview-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.8);
+        }
+        
+        #preview-container {
+            padding: 2rem 0;
+        }
 
-\f0\fs24 \cf0 <!DOCTYPE html>\
-<html lang="en">\
-  <head>\
-    <meta charset="UTF-8" />\
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />\
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />\
-    <title>PenawaranPro - Pembuat Surat Penawaran Harga</title>\
-  </head>\
-  <body>\
-    <div id="root"></div>\
-    <script type="module" src="/src/main.jsx"></script>\
-  </body>\
-</html>}
+        .page {
+            font-family: Arial, sans-serif;
+            background-color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            width: 21cm;
+            height: 29.7cm;
+            margin: 0 auto 1.5rem auto;
+            position: relative;
+            overflow: hidden; /* Important for positioning children */
+        }
+
+        .page-header-img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: auto;
+        }
+        
+        .page-content-wrapper {
+            position: absolute;
+            top: 4.2cm; /* Height of the header */
+            bottom: 3.5cm; /* Bottom margin */
+            left: 2.5cm;
+            right: 2cm;
+            overflow: hidden; /* This hides content that overflows */
+        }
+
+        .page-content-inner {
+            font-size: 10pt;
+            line-height: 1.5;
+        }
+
+
+        /* Print styles */
+        @media print {
+            body { background-color: white; }
+            body * { visibility: hidden; }
+            #preview-container, #preview-container * { visibility: visible; }
+            #preview-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 0;
+            }
+            .page {
+                margin: 0;
+                box-shadow: none;
+                border: none;
+                page-break-after: always;
+            }
+            #form-container, #header, #modal-controls { display: none; }
+        }
+    </style>
+</head>
+<body class="bg-gray-200">
+
+    <!-- Header -->
+    <header id="header" class="bg-white shadow-md p-4 sticky top-0 z-20">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-700">Generator Surat Penawaran</h1>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container mx-auto p-4">
+        
+        <!-- Form Input -->
+        <div id="form-container" class="bg-white p-6 rounded-lg shadow-lg max-w-4xl mx-auto">
+            <h2 class="text-xl font-semibold mb-6 border-b pb-3">Isi Detail Penawaran</h2>
+            <form id="quotation-form" class="space-y-6">
+                
+                <!-- Section: Informasi Surat -->
+                <div class="p-4 border rounded-lg bg-gray-50">
+                    <h3 class="font-semibold text-lg mb-3">Informasi Surat</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="nomor-surat" class="block text-sm font-medium text-gray-700">Nomor Surat</label>
+                            <input type="text" id="nomor-surat" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Contoh: 216/MRP/PWRN/VIII/2025">
+                        </div>
+                        <div>
+                            <label for="tanggal-surat" class="block text-sm font-medium text-gray-700">Tanggal Surat</label>
+                            <input type="date" id="tanggal-surat" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: Informasi Klien -->
+                <div class="p-4 border rounded-lg bg-gray-50">
+                    <h3 class="font-semibold text-lg mb-3">Informasi Klien</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="md:col-span-2">
+                            <label for="nama-perusahaan" class="block text-sm font-medium text-gray-700">Nama Perusahaan</label>
+                            <input type="text" id="nama-perusahaan" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="PT NAMA PERUSAHAAN">
+                        </div>
+                        <div class="md:col-span-2">
+                             <label for="alamat-perusahaan" class="block text-sm font-medium text-gray-700">Alamat Lengkap</label>
+                            <textarea id="alamat-perusahaan" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Jl. Raya Raja Basa RT/RW: 010/004&#10;Desa Kunjir, Kec. Raja Basa&#10;Kab. Lampung Selatan"></textarea>
+                        </div>
+                         <div>
+                            <label for="up" class="block text-sm font-medium text-gray-700">Up (PIC)</label>
+                            <input type="text" id="up" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Bapak Sikan Tan">
+                        </div>
+                        <div>
+                            <label for="jabatan-up" class="block text-sm font-medium text-gray-700">Jabatan (Opsional)</label>
+                            <input type="text" id="jabatan-up" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Project Manager">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: Detail Penawaran -->
+                <div class="p-4 border rounded-lg bg-gray-50">
+                    <h3 class="font-semibold text-lg mb-3">Detail Penawaran</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="hal" class="block text-sm font-medium text-gray-700">Hal</label>
+                            <select id="hal" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                <option>Penawaran Harga Material Geomembrane & Instalasi</option>
+                                <option>Penawaran Harga Material Geomembrane</option>
+                                <option value="custom">Lainnya...</option>
+                            </select>
+                            <input type="text" id="hal-custom" class="mt-2 hidden w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Ketik perihal surat di sini">
+                        </div>
+                        <div>
+                            <label for="proyek" class="block text-sm font-medium text-gray-700">Proyek</label>
+                            <input type="text" id="proyek" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Hatchery Vaname, Lampung">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: Tabel Harga -->
+                <div class="p-4 border rounded-lg bg-gray-50">
+                    <div class="flex justify-between items-center mb-3">
+                         <h3 class="font-semibold text-lg">Item Penawaran</h3>
+                         <button type="button" id="add-item" class="bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-3 rounded-md text-sm shadow transition-transform transform hover:scale-105">+ Tambah Item</button>
+                    </div>
+                    <div id="items-container" class="space-y-4">
+                        <!-- Item rows will be injected here by JS -->
+                    </div>
+                    <div class="mt-4 flex items-center">
+                        <input type="checkbox" id="show-total" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" checked>
+                        <label for="show-total" class="ml-2 block text-sm text-gray-900">Tampilkan Total Harga Keseluruhan?</label>
+                    </div>
+                </div>
+
+                <!-- Section: Kondisi & Pembayaran -->
+                <div class="p-4 border rounded-lg bg-gray-50">
+                    <h3 class="font-semibold text-lg mb-3">Kondisi & Pembayaran</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="kondisi-penawaran" class="block text-sm font-medium text-gray-700">Kondisi Penawaran</label>
+                            <select id="kondisi-penawaran" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                <option value="material_dan_instalasi">Template: Material & Instalasi</option>
+                                <option value="material_saja">Template: Material Saja</option>
+                                <option value="custom">Custom...</option>
+                            </select>
+                            <textarea id="kondisi-penawaran-text" rows="8" class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                        </div>
+                        <div>
+                            <label for="metode-pembayaran" class="block text-sm font-medium text-gray-700">Metode Pembayaran</label>
+                            <textarea id="metode-pembayaran-text" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                        </div>
+                         <div>
+                            <label for="term-pengambilan" class="block text-sm font-medium text-gray-700">Termin Pengambilan Barang</label>
+                            <textarea id="term-pengambilan-text" rows="2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                        </div>
+                        <div>
+                            <label for="berlaku-hingga" class="block text-sm font-medium text-gray-700">Penawaran Berlaku Hingga</label>
+                            <input type="date" id="berlaku-hingga" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Section: Penanda Tangan -->
+                 <div class="p-4 border rounded-lg bg-gray-50">
+                    <h3 class="font-semibold text-lg mb-3">Penanda Tangan</h3>
+                    <div>
+                        <label for="penanda-tangan" class="block text-sm font-medium text-gray-700">Pilih Nama</label>
+                        <select id="penanda-tangan" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            <!-- Options will be added by JS -->
+                        </select>
+                    </div>
+                </div>
+                 <div class="mt-8 text-center">
+                    <button type="button" id="preview-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-transform transform hover:scale-105 flex items-center gap-2 mx-auto">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                        Buat & Preview Surat
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for Preview -->
+    <div id="preview-modal">
+        <div class="fixed top-0 left-0 right-0 bg-white p-3 text-center z-20 shadow-lg" id="modal-controls">
+            <button id="close-modal" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg mr-4">Tutup Preview</button>
+            <button id="generate-pdf-modal" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Download PDF</button>
+        </div>
+        <div id="preview-container">
+            <!-- Pages will be generated here by JavaScript -->
+        </div>
+    </div>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- DATA TEMPLATES ---
+        const signatoryData = {
+            krisandi: {
+                name: 'Ir. Krisandi Saptyanto',
+                title: 'Design and Project Manager',
+                contact: '+62-821-1012-8965',
+                signatureImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgODAiPjxzdHlsZT4uc3Ryb2tlIHtzdHJva2U6IzAwMDtmaWxsOm5vbmU7c3Ryb2tlLXdpZHRoOjI7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO308L3N0eWxlPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik0xMCw1MEMxNSwzMCwzMCwxMCw1MCwyMGMxNSw4LDQwLTUsNTAtNWMxNSwwLDMwLDE1LDQwLDQwIEMxODAsNTAsMTgwLDMwLDE5MCw0MCIvPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik04MCw0MEw5MCw1MEwxMDAsNDBMMTEwLDUwIi8+PC9zdmc+'
+            },
+            isparmo: {
+                name: 'Ir. Isparmo, IPM',
+                title: 'Marketing Manager',
+                contact: '0812 108 3060',
+                signatureImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgODAiPjxzdHlsZT4uc3Ryb2tlIHtzdHJva2U6IzAwMDtmaWxsOm5vbmU7c3Ryb2tlLXdpZHRoOjI7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO308L3N0eWxlPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik0xMCw2MEMyMCwzMCw0MCwxMCw2MCwyMGMxMCw1LDMwLTUsNDUtMTUgYzE1LTEwLDMwLDAsNDAsMjAgQzE2NSw0NSwxODAsMjAsMTkwLDMwIi8+PHBhdGggY2xhc3M9InN0cm9rZSIgZD0iTTgwLDUwTDkwLDYwTDEwMCw1MEwxMTAsNjAiLz48L3N2Zz4='
+            },
+            nuruzzaman: {
+                name: 'Ir. Nuruzzaman',
+                title: 'Technical & Marketing Manager',
+                contact: '0811-877-022',
+                signatureImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgODAiPjxzdHlsZT4uc3Ryb2tlIHtzdHJva2U6IzAwMDtmaWxsOm5vbmU7c3Ryb2tlLXdpZHRoOjI7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO308L3N0eWxlPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik0xMCw0MEMyMCw2MCw0MCw3MCw2MCw1MCBDODAsMzAsMTAwLDMwLDEyMCw1MCBDMTQwLDcwLDE2MCw2MCwxODAsNDUiLz48L3N2Zz4='
+            }
+        };
+
+        const conditionTemplates = {
+            material_dan_instalasi: `• Harga Material Locco Gudang Multibangun di Bitung, Tangerang.
+• Harga Material dan Instalasi belum termasuk PPN 11%.
+• Harga Instalasi tidak termasuk genset 10 kVA & dewatering pump.
+• Harga Instalasi tidak termasuk persiapan lahan dan pekerjaan tanah seperti penggalian, penimbunan dan pembuatan angkur.
+• Harga Instalasi tidak termasuk Unskilled labor (kuli gelar) dan besi angkur.
+• Harga Instalasi tidak termasuk peralatan tambahan seperti plat strip, baut, dll bila diperlukan.
+• Harga Instalasi tidak termasuk biaya langsir Material.
+• Harga Instalasi sudah termasuk akomodasi, transportasi, penginapan dan tes kesehatan untuk installer.
+• Harga Instalasi dengan asumsi pekerjaan dilakukan bukan pada musim hujan.`,
+            material_saja: `• Harga Material Locco Gudang Multibangun di Bitung, Tangerang.
+• Harga Material belum termasuk PPN 11%.
+• Harga tidak termasuk biaya ekspedisi/pengiriman.
+• Ketersediaan stok harap dikonfirmasi sebelum melakukan pemesanan.`
+        };
+
+        const paymentTemplates = {
+            default: `• Material: Cash in Advance.\n• Instalasi: DP 50%, sisa pelunasan sesuai dengan prosentase progress pekerjaan secara bertahap.`
+        };
+        
+        const deliveryTermTemplates = {
+            default: `Pengambilan Material setelah Purchase Order dan pembayaran diterima.`
+        };
+
+        // --- HELPER FUNCTIONS ---
+        const formatCurrency = (number) => {
+            if (isNaN(number)) return 'Rp 0';
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(number);
+        };
+
+        const formatDate = (dateString) => {
+            if (!dateString) return '';
+            const date = new Date(dateString + 'T00:00:00');
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            return date.toLocaleDateString('id-ID', options);
+        };
+
+        // --- DOM ELEMENTS ---
+        const itemsContainer = document.getElementById('items-container');
+        const previewModal = document.getElementById('preview-modal');
+        const previewContainer = document.getElementById('preview-container');
+
+        // --- NEW PAGINATION LOGIC (REBUILT) ---
+        async function generatePages() {
+            previewContainer.innerHTML = '';
+            
+            // 1. Create a single, continuous block of the full content in a hidden div
+            const offscreenRenderer = document.createElement('div');
+            offscreenRenderer.style.position = 'absolute';
+            offscreenRenderer.style.left = '-9999px';
+            offscreenRenderer.style.width = '16.5cm'; // 21cm - 2.5cm - 2cm margins
+            document.body.appendChild(offscreenRenderer);
+            offscreenRenderer.innerHTML = buildFullContent();
+
+            const allNodes = Array.from(offscreenRenderer.childNodes);
+            offscreenRenderer.innerHTML = '';
+
+            let pageNum = 0;
+            let currentPageContent;
+            
+            const createNewPage = () => {
+                pageNum++;
+                const page = document.createElement('div');
+                page.className = `page`;
+                
+                const headerImg = document.createElement('img');
+                headerImg.className = 'page-header-img';
+                headerImg.src = pageNum > 1 
+                    ? 'https://github.com/krisandi89/penawaranmrp/blob/main/Kop%20SUrat%20Multibangun%20halaman%202.png?raw=true'
+                    : 'https://github.com/krisandi89/penawaranmrp/blob/main/kop%20surat%20multibangun.png?raw=true';
+                
+                const contentWrapper = document.createElement('div');
+                contentWrapper.className = 'page-content-wrapper';
+                
+                const contentInner = document.createElement('div');
+                contentInner.className = 'page-content-inner';
+
+                contentWrapper.appendChild(contentInner);
+                page.appendChild(headerImg);
+                page.appendChild(contentWrapper);
+                previewContainer.appendChild(page);
+                
+                return contentInner;
+            };
+
+            currentPageContent = createNewPage();
+            const maxContentHeight = currentPageContent.parentElement.offsetHeight;
+
+            for (const node of allNodes) {
+                // Special handling for tables to break them by row
+                if (node.tagName === 'TABLE') {
+                    const thead = node.querySelector('thead').cloneNode(true);
+                    const rows = Array.from(node.querySelector('tbody').children);
+
+                    let tempTable = document.createElement('table');
+                    tempTable.className = node.className;
+                    tempTable.appendChild(thead);
+                    let tempTbody = document.createElement('tbody');
+                    tempTable.appendChild(tempTbody);
+                    
+                    if (currentPageContent.scrollHeight + thead.offsetHeight > maxContentHeight) {
+                        currentPageContent = createNewPage();
+                    }
+                    currentPageContent.appendChild(tempTable);
+
+                    for (const row of rows) {
+                        tempTbody.appendChild(row.cloneNode(true));
+                        if (currentPageContent.scrollHeight > maxContentHeight) {
+                            tempTbody.removeChild(row);
+                            currentPageContent = createNewPage();
+                            tempTable = document.createElement('table');
+                            tempTable.className = node.className;
+                            tempTable.appendChild(thead.cloneNode(true));
+                            tempTbody = document.createElement('tbody');
+                            tempTable.appendChild(tempTbody);
+                            tempTbody.appendChild(row.cloneNode(true));
+                            currentPageContent.appendChild(tempTable);
+                        }
+                    }
+                } else {
+                    // Handle all other elements
+                    currentPageContent.appendChild(node.cloneNode(true));
+                    if (currentPageContent.scrollHeight > maxContentHeight) {
+                        currentPageContent.removeChild(node);
+                        currentPageContent = createNewPage();
+                        currentPageContent.appendChild(node.cloneNode(true));
+                    }
+                }
+            }
+
+            document.body.removeChild(offscreenRenderer);
+        }
+        
+        function buildFullContent() {
+            // This function returns the HTML STRING of the entire document content.
+            
+            const headInfo = `<div class="flex justify-between mb-8">
+                <p>No. <span class="font-bold">${document.getElementById('nomor-surat').value || '[Nomor Surat]'}</span></p>
+                <p>${formatDate(document.getElementById('tanggal-surat').value) || '[Tanggal Surat]'}</p>
+            </div>`;
+
+            const clientSection = `<section class="mb-8">
+                <p>Kepada Yth.:</p>
+                <p class="font-bold uppercase">${document.getElementById('nama-perusahaan').value || '[Nama Perusahaan]'}</p>
+                <div style="white-space: pre-wrap;">${document.getElementById('alamat-perusahaan').value || '[Alamat Perusahaan]'}</div>
+                <br>
+                <p>Up: <span class="font-semibold">${document.getElementById('up').value || '[Nama PIC]'}</span></p>
+            </section>`;
+            
+            const halSelect = document.getElementById('hal');
+            const halText = (halSelect.value === 'custom') ? (document.getElementById('hal-custom').value || '[Hal]') : halSelect.options[halSelect.selectedIndex].text;
+            const subjectSection = `<section class="mb-6">
+                <p class="font-bold underline">Perihal: <span>${halText}</span></p>
+                <p>Proyek: <span>${document.getElementById('proyek').value || '[Proyek]'}</span></p>
+            </section>`;
+            
+            const openingSection = `<section class="mb-6">
+                <p>Dengan hormat,</p>
+                <p>Menindaklanjuti permohonan penawaran harga resmi kami untuk proyek tersebut, maka bersama ini saya kirimkan harga produk kami sebagai berikut:</p>
+            </section>`;
+
+            let tableHTML = `<table class="w-full border-collapse border border-gray-400 mb-6">
+                <thead><tr class="bg-gray-200">
+                    <th class="border border-gray-300 p-2 text-center font-bold w-2/4">Material</th>
+                    <th class="border border-gray-300 p-2 font-bold text-center">Volume</th>
+                    <th class="border border-gray-300 p-2 font-bold text-center">Harga</th>
+                    <th class="border border-gray-300 p-2 font-bold text-center">Jumlah Harga</th>
+                </tr></thead><tbody>`;
+            let grandTotal = 0;
+            const itemRows = itemsContainer.querySelectorAll('.item-row');
+            itemRows.forEach(row => {
+                const material = row.querySelector('.item-material').value.replace(/\n/g, '<br>');
+                const volume = parseFloat(row.querySelector('.item-volume').value) || 0;
+                const harga = parseFloat(row.querySelector('.item-harga').value) || 0;
+                const jumlah = volume * harga;
+                grandTotal += jumlah;
+                tableHTML += `<tr>
+                    <td class="border border-gray-300 p-2 align-top">${material || '&nbsp;'}</td>
+                    <td class="border border-gray-300 p-2 text-center align-top">${volume.toLocaleString('id-ID')}</td>
+                    <td class="border border-gray-300 p-2 text-right align-top">${formatCurrency(harga)}</td>
+                    <td class="border border-gray-300 p-2 text-right align-top">${formatCurrency(jumlah)}</td>
+                </tr>`;
+            });
+            if (document.getElementById('show-total').checked && itemRows.length > 0) {
+                 tableHTML += `<tr>
+                    <td colspan="3" class="border border-gray-300 p-2 text-right font-bold">Total</td>
+                    <td class="border border-gray-300 p-2 text-right font-bold">${formatCurrency(grandTotal)}</td>
+                </tr>`;
+            }
+            tableHTML += '</tbody></table>';
+
+            const conditionsSection = `<section class="mb-6">
+                <h4 class="font-bold mb-1">Kondisi Penawaran :</h4>
+                <div class="pl-4" style="white-space: pre-wrap;">${document.getElementById('kondisi-penawaran-text').value}</div>
+            </section>`;
+            
+            const paymentSection = `<section class="mb-6">
+                <h4 class="font-bold mb-1">Metode Pembayaran :</h4>
+                <div class="pl-4" style="white-space: pre-wrap;">${document.getElementById('metode-pembayaran-text').value}</div>
+            </section>`;
+
+            const deliverySection = `<section class="mb-6"><p>${document.getElementById('term-pengambilan-text').value || ''}</p></section>`;
+
+            const closingSection = `<section class="mb-4">
+                <p>Penawaran harga ini berlaku sampai dengan tanggal <span class="font-bold">${formatDate(document.getElementById('berlaku-hingga').value) || '[Tanggal Berlaku]'}</span>.</p><br>
+                <p>Demikian penawaran harga ini kami sampaikan. Atas perhatian dan kerjasamanya kami ucapkan terima kasih.</p>
+            </section>`;
+            
+            const selectedSignatoryKey = document.getElementById('penanda-tangan').value;
+            const signatory = signatoryData[selectedSignatoryKey];
+            let signatureSection = '';
+            if (signatory) {
+                signatureSection = `<footer class="mt-4" style="page-break-inside: avoid;">
+                    <p>Hormat kami,</p>
+                    <div class="h-24 relative">
+                       <img src="${signatory.signatureImg}" alt="Tanda Tangan" class="h-24 mix-blend-darken absolute left-0 top-0">
+                    </div>
+                    <p class="font-bold">${signatory.name}</p>
+                    <p class="italic">${signatory.title}</p>
+                    <p>${signatory.contact}</p>
+                </footer>`;
+            }
+            
+            return headInfo + clientSection + subjectSection + openingSection + tableHTML + conditionsSection + paymentSection + deliverySection + closingSection + signatureSection;
+        }
+
+        function addItemRow() {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'item-row p-3 border rounded-md bg-white relative';
+            itemDiv.innerHTML = `
+                <button type="button" class="remove-item absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold text-xl p-1 leading-none">&times;</button>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div class="md:col-span-3">
+                        <label class="block text-sm font-medium text-gray-700">Material (Deskripsi)</label>
+                        <textarea rows="3" class="item-material mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm" placeholder="GEOMEMBRANE HDPE&#10;Merk: HUITEX&#10;Ketebalan: 0,75mm"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Volume</label>
+                        <input type="number" class="item-volume mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm" placeholder="15000">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Harga Satuan</label>
+                        <input type="number" class="item-harga mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm" placeholder="38000">
+                    </div>
+                </div>`;
+            itemsContainer.appendChild(itemDiv);
+            itemDiv.querySelector('.remove-item').addEventListener('click', (e) => e.target.closest('.item-row').remove());
+        }
+        
+        // --- EVENT LISTENERS ---
+        document.getElementById('preview-button').addEventListener('click', () => {
+            generatePages();
+            previewModal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        });
+
+        document.getElementById('close-modal').addEventListener('click', () => {
+            previewModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+
+        document.getElementById('add-item').addEventListener('click', addItemRow);
+
+        document.getElementById('hal').addEventListener('change', (e) => {
+            const customInput = document.getElementById('hal-custom');
+            customInput.style.display = (e.target.value === 'custom') ? 'block' : 'none';
+            if (e.target.value === 'custom') customInput.focus();
+        });
+
+        document.getElementById('kondisi-penawaran').addEventListener('change', (e) => {
+            const textArea = document.getElementById('kondisi-penawaran-text');
+            textArea.value = (e.target.value === 'custom') ? '' : conditionTemplates[e.target.value];
+            if (e.target.value === 'custom') textArea.focus();
+        });
+
+        document.getElementById('generate-pdf-modal').addEventListener('click', () => {
+            const element = document.getElementById('preview-container');
+            const opt = {
+              margin:       0,
+              filename:     `Penawaran - ${document.getElementById('nama-perusahaan').value.replace(/[^a-z0-9]/gi, '_') || 'file'}.pdf`,
+              image:        { type: 'jpeg', quality: 0.98 },
+              html2canvas:  { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff' },
+              jsPDF:        { unit: 'cm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().from(element).set(opt).save();
+        });
+
+        // --- INITIALIZATION ---
+        function init() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            document.getElementById('tanggal-surat').value = `${yyyy}-${mm}-${dd}`;
+
+            const expiryDate = new Date();
+            expiryDate.setDate(today.getDate() + 14);
+            const exp_yyyy = expiryDate.getFullYear();
+            const exp_mm = String(expiryDate.getMonth() + 1).padStart(2, '0');
+            const exp_dd = String(expiryDate.getDate()).padStart(2, '0');
+            document.getElementById('berlaku-hingga').value = `${exp_yyyy}-${exp_mm}-${exp_dd}`;
+
+            const signatorySelect = document.getElementById('penanda-tangan');
+            Object.keys(signatoryData).forEach(key => {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = signatoryData[key].name;
+                signatorySelect.appendChild(option);
+            });
+            signatorySelect.value = 'krisandi';
+
+            document.getElementById('kondisi-penawaran').value = 'material_dan_instalasi';
+            document.getElementById('kondisi-penawaran-text').value = conditionTemplates.material_dan_instalasi;
+            document.getElementById('metode-pembayaran-text').value = paymentTemplates.default;
+            document.getElementById('term-pengambilan-text').value = deliveryTermTemplates.default;
+
+            for(let i=0; i<8; i++) { addItemRow(); } // Add enough items to test pagination
+        }
+
+        init();
+    });
+    </script>
+</body>
+</html>
+
