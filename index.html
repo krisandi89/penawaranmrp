@@ -3,18 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Generator Surat Penawaran Harga</title>
+    <title>Quotation Generator</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Arial:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Arial', sans-serif !important;
+            font-family: 'Inter', sans-serif;
             background-color: #f0f2f5;
         }
-        
-        #preview-modal {
+        .modal {
             display: none;
+        }
+        .modal.active {
+            display: flex;
+        }
+        
+        /* Gaya untuk Pratinjau PDF */
+        #pdf-preview-modal {
             position: fixed;
             z-index: 1000;
             left: 0;
@@ -24,11 +30,9 @@
             overflow: auto;
             background-color: rgba(0,0,0,0.8);
         }
-        
         #preview-container {
             padding: 2rem 0;
         }
-
         .page {
             font-family: 'Arial', sans-serif !important;
             background-color: white;
@@ -40,11 +44,9 @@
             overflow: hidden;
             page-break-after: always;
         }
-
         .page:last-child {
             page-break-after: auto;
         }
-        
         .page-header-img {
             position: absolute;
             top: 0;
@@ -52,461 +54,654 @@
             width: 100%;
             height: auto;
         }
-        
         .page-content-wrapper {
             position: absolute;
-            top: 4.2cm; /* Height of the header */
-            bottom: 3.5cm; /* Bottom margin */
+            top: 4.2cm;
+            bottom: 2.5cm;
             left: 2.5cm;
             right: 2cm;
-            overflow: hidden;
-        }
-
-        .page-content-inner {
             font-size: 10pt !important;
             line-height: 1.5 !important;
-            font-family: 'Arial', sans-serif !important;
+        }
+         .page-content-inner table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .page-content-inner th, .page-content-inner td {
+            border: 1px solid #333;
+            padding: 5px;
+        }
+        .page-content-inner th {
+             background-color: #e9e9e9;
         }
 
-        /* Kelas untuk mencegah elemen terpotong */
-        .avoid-break {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-            overflow: hidden;
-        }
-
-        /* Pastikan header dan footer tidak terpotong */
-        h3, h4, table, footer, .signature-section {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-        }
-
-        /* Tambahkan margin bawah pada elemen untuk mencegah konten terlalu dekat dengan batas halaman */
-        p, div, table {
-            margin-bottom: 0.5cm !important;
-        }
-
-        /* Tambahkan space untuk footer */
-        .page-content-inner > *:last-child {
-            margin-bottom: 2cm !important;
-        }
-
-        /* Print styles */
         @media print {
-            body { background-color: white; }
             body * { visibility: hidden; }
             #preview-container, #preview-container * { visibility: visible; }
             #preview-container {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                padding: 0;
+                position: absolute; left: 0; top: 0; width: 100%; padding: 0;
             }
-            .page {
-                margin: 0;
-                box-shadow: none;
-                border: none;
-                page-break-after: always;
-            }
+            .page { margin: 0; box-shadow: none; border: none; }
             #form-container, #header, #modal-controls { display: none; }
         }
     </style>
 </head>
-<body class="bg-gray-200">
+<body class="bg-gray-100 text-gray-800">
 
-    <!-- Header -->
-    <header id="header" class="bg-white shadow-md p-4 sticky top-0 z-20">
-        <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-gray-700">Generator Surat Penawaran</h1>
-        </div>
-    </header>
+    <div id="app" class="container mx-auto p-4 md:p-8">
 
-    <!-- Main Content -->
-    <div class="container mx-auto p-4">
-        
-        <!-- Form Input -->
-        <div id="form-container" class="bg-white p-6 rounded-lg shadow-lg max-w-4xl mx-auto">
-            <h2 class="text-xl font-semibold mb-6 border-b pb-3">Isi Detail Penawaran</h2>
-            <form id="quotation-form" class="space-y-6">
-                
-                <!-- Section: Informasi Surat -->
-                <div class="p-4 border rounded-lg bg-gray-50">
-                    <h3 class="font-semibold text-lg mb-3">Informasi Surat</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="nomor-surat" class="block text-sm font-medium text-gray-700">Nomor Surat</label>
-                            <input type="text" id="nomor-surat" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Contoh: 216/MRP/PWRN/VIII/2025">
-                        </div>
-                        <div>
-                            <label for="tanggal-surat" class="block text-sm font-medium text-gray-700">Tanggal Surat</label>
-                            <input type="date" id="tanggal-surat" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                        </div>
-                    </div>
-                </div>
+        <!-- Header -->
+        <header class="mb-8">
+            <h1 class="text-4xl font-bold text-gray-800">Quotation Generator</h1>
+            <p class="text-gray-600">Buat, kelola, dan unduh surat penawaran harga dengan mudah.</p>
+        </header>
 
-                <!-- Section: Informasi Klien -->
-                <div class="p-4 border rounded-lg bg-gray-50">
-                    <h3 class="font-semibold text-lg mb-3">Informasi Klien</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="md:col-span-2">
-                            <label for="nama-perusahaan" class="block text-sm font-medium text-gray-700">Nama Perusahaan</label>
-                            <input type="text" id="nama-perusahaan" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="PT NAMA PERUSAHAAN">
-                        </div>
-                        <div class="md:col-span-2">
-                             <label for="alamat-perusahaan" class="block text-sm font-medium text-gray-700">Alamat Lengkap</label>
-                            <textarea id="alamat-perusahaan" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Jl. Raya Raja Basa RT/RW: 010/004&#10;Desa Kunjir, Kec. Raja Basa&#10;Kab. Lampung Selatan"></textarea>
-                        </div>
-                         <div>
-                            <label for="up" class="block text-sm font-medium text-gray-700">Up (PIC)</label>
-                            <input type="text" id="up" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Bapak Sikan Tan">
-                        </div>
-                        <div>
-                            <label for="jabatan-up" class="block text-sm font-medium text-gray-700">Jabatan (Opsional)</label>
-                            <input type="text" id="jabatan-up" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Project Manager">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Section: Detail Penawaran -->
-                <div class="p-4 border rounded-lg bg-gray-50">
-                    <h3 class="font-semibold text-lg mb-3">Detail Penawaran</h3>
-                    <div class="space-y-4">
-                        <div>
-                            <label for="hal" class="block text-sm font-medium text-gray-700">Hal</label>
-                            <select id="hal" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                                <option>Penawaran Harga Material Geomembrane & Instalasi</option>
-                                <option value="custom">Lainnya...</option>
-                            </select>
-                            <input type="text" id="hal-custom" class="mt-2 hidden w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Ketik perihal surat di sini">
-                        </div>
-                        <div>
-                            <label for="proyek" class="block text-sm font-medium text-gray-700">Proyek</label>
-                            <input type="text" id="proyek" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Hatchery Vaname, Lampung">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Section: Tabel Harga -->
-                <div class="p-4 border rounded-lg bg-gray-50">
-                    <div class="flex justify-between items-center mb-3">
-                         <h3 class="font-semibold text-lg">Item Penawaran</h3>
-                         <button type="button" id="add-item" class="bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-3 rounded-md text-sm shadow transition-transform transform hover:scale-105">+ Tambah Item</button>
-                    </div>
-                    <div id="items-container" class="space-y-4">
-                        <!-- Item rows will be injected here by JS -->
-                    </div>
-                    <div class="mt-4 flex items-center">
-                        <input type="checkbox" id="show-total" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" checked>
-                        <label for="show-total" class="ml-2 block text-sm text-gray-900">Tampilkan Total Harga Keseluruhan?</label>
-                    </div>
-                </div>
-
-                <!-- Section: Kondisi & Pembayaran -->
-                <div class="p-4 border rounded-lg bg-gray-50">
-                    <h3 class="font-semibold text-lg mb-3">Kondisi & Pembayaran</h3>
-                    <div class="space-y-4">
-                        <div>
-                            <label for="kondisi-penawaran" class="block text-sm font-medium text-gray-700">Kondisi Penawaran</label>
-                            <textarea id="kondisi-penawaran-text" rows="8" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
-                        </div>
-                        <div>
-                            <label for="metode-pembayaran" class="block text-sm font-medium text-gray-700">Metode Pembayaran</label>
-                            <textarea id="metode-pembayaran-text" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
-                        </div>
-                         <div>
-                            <label for="term-pengambilan" class="block text-sm font-medium text-gray-700">Termin Pengambilan Barang</label>
-                            <textarea id="term-pengambilan-text" rows="2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
-                        </div>
-                        <div>
-                            <label for="berlaku-hingga" class="block text-sm font-medium text-gray-700">Penawaran Berlaku Hingga</label>
-                            <input type="date" id="berlaku-hingga" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Section: Penanda Tangan -->
-                 <div class="p-4 border rounded-lg bg-gray-50">
-                    <h3 class="font-semibold text-lg mb-3">Penanda Tangan</h3>
-                    <div>
-                        <label for="penanda-tangan" class="block text-sm font-medium text-gray-700">Pilih Nama</label>
-                        <select id="penanda-tangan" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                            <!-- Options will be added by JS -->
-                        </select>
-                    </div>
-                </div>
-                 <div class="mt-8 text-center">
-                    <button type="button" id="preview-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-transform transform hover:scale-105 flex items-center gap-2 mx-auto">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                        Buat & Preview Surat
+        <!-- Main Content -->
+        <main id="main-view">
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <div class="flex flex-wrap gap-4 justify-between items-center mb-4">
+                    <h2 class="text-2xl font-semibold">Daftar Penawaran</h2>
+                    <button onclick="app.showForm()" class="bg-blue-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-300 shadow-sm">
+                        + Buat Penawaran Baru
                     </button>
                 </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal for Preview -->
-    <div id="preview-modal">
-        <div class="fixed top-0 left-0 right-0 bg-white p-3 text-center z-20 shadow-lg" id="modal-controls">
-            <button id="close-modal" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg mr-4">Tutup Preview</button>
-            <button id="generate-pdf-modal" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Download PDF</button>
-        </div>
-        <div id="preview-container">
-            <!-- Pages will be generated here by JavaScript -->
-        </div>
-    </div>
-    
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // --- DATA TEMPLATES ---
-        const signatoryData = {
-            krisandi: {
-                name: 'Ir. Krisandi Saptyanto',
-                title: 'Design and Project Manager',
-                contact: '+62-821-1012-8965',
-                signatureImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgODAiPjxzdHlsZT4uc3Ryb2tlIHtzdHJva2U6IzAwMDtmaWxsOm5vbmU7c3Ryb2tlLXdpZHRoOjI7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO308L3N0eWxlPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik0xMCw1MEMxNSwzMCwzMCwxMCw1MCwyMGMxNSw4LDQwLTUsNTAtNWMxNSwwLDMwLDE1LDQwLDQwIEMxODAsNTUsMTgwLDMwLDE5MCw0MCIvPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik04MCw0MEw5MCw1MEwxMDAsNDBMMTEwLDUwIi8+PC9zdmc+'
-            }
-        };
-
-        const conditionTemplate = `• Harga Material Locco Gudang Multibangun di Bitung, Tangerang.
-• Harga Material dan Instalasi belum termasuk PPN 11%.
-• Harga Instalasi tidak termasuk genset 10 kVA & dewatering pump.
-• Harga Instalasi tidak termasuk persiapan lahan dan pekerjaan tanah seperti penggalian, penimbunan dan pembuatan angkur.
-• Harga Instalasi tidak termasuk Unskilled labor (kuli gelar) dan besi angkur.
-• Harga Instalasi tidak termasuk peralatan tambahan seperti plat strip, baut, dll bila diperlukan.
-• Harga Instalasi tidak termasuk biaya langsir Material.
-• Harga Instalasi sudah termasuk akomodasi, transportasi, penginapan dan tes kesehatan untuk installer.
-• Harga Instalasi dengan asumsi pekerjaan dilakukan bukan pada musim hujan.`;
-
-        const paymentTemplate = `• Material: Cash in Advance.
-• Instalasi: DP 50%, sisa pelunasan sesuai dengan prosentase progress pekerjaan secara bertahap.`;
-        
-        const deliveryTermTemplate = `Pengambilan Material setelah Purchase Order dan pembayaran diterima.`;
-
-        // --- HELPER FUNCTIONS ---
-        const formatCurrency = (number) => {
-            if (isNaN(number)) return 'Rp 0';
-            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(number);
-        };
-
-        const formatDate = (dateString) => {
-            if (!dateString) return '';
-            const date = new Date(dateString + 'T00:00:00');
-            const options = { year: 'numeric', month: 'long', day: 'numeric' };
-            return date.toLocaleDateString('id-ID', options);
-        };
-
-        // --- DOM ELEMENTS ---
-        const itemsContainer = document.getElementById('items-container');
-        const previewModal = document.getElementById('preview-modal');
-        const previewContainer = document.getElementById('preview-container');
-
-        // --- GENERATE PAGES WITH CSS-BASED PAGINATION ---
-        function generatePages() {
-            previewContainer.innerHTML = '';
-            
-            // Buat halaman pertama dengan kop surat
-            const firstPage = document.createElement('div');
-            firstPage.className = 'page';
-            firstPage.innerHTML = `
-                <img class="page-header-img" src="https://github.com/krisandi89/penawaranmrp/blob/main/kop%20surat%20multibangun.png?raw=true">
-                <div class="page-content-wrapper">
-                    <div class="page-content-inner">
-                        ${buildFullContent()}
-                    </div>
+                <div id="quotation-list" class="space-y-3">
+                    <!-- Daftar penawaran akan dirender di sini -->
                 </div>
-            `;
-            
-            previewContainer.appendChild(firstPage);
-        }
+            </div>
+        </main>
+
+        <!-- Form View -->
+        <div id="form-view" class="hidden">
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 id="form-title" class="text-2xl font-semibold">Buat Penawaran Baru</h2>
+                    <button onclick="app.showList()" class="bg-gray-200 text-gray-800 font-semibold px-5 py-2 rounded-lg hover:bg-gray-300 transition-colors duration-300">
+                        &larr; Kembali ke Daftar
+                    </button>
+                </div>
+
+                <form id="quotation-form" class="space-y-6">
+                    <input type="hidden" id="quotation-id">
+
+                    <!-- Bagian Info Dasar -->
+                    <fieldset class="border p-4 rounded-lg">
+                        <legend class="text-lg font-semibold px-2">Informasi Dasar</legend>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                            <!-- Customer Info -->
+                            <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 border p-4 rounded-md bg-gray-50/50">
+                                <h3 class="md:col-span-2 text-md font-semibold text-gray-600 -mt-1 mb-1">Data Pelanggan</h3>
+                                <div class="md:col-span-2">
+                                    <label for="customer-name" class="block text-sm font-medium text-gray-700">Nama Pelanggan / Perusahaan</label>
+                                    <input type="text" id="customer-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Contoh: PT Konstruksi Jaya">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label for="customer-address" class="block text-sm font-medium text-gray-700">Alamat Pelanggan</label>
+                                    <textarea id="customer-address" rows="2" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Jl. Contoh Alamat No. 123, Jakarta"></textarea>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label for="customer-phone" class="block text-sm font-medium text-gray-700">Telepon / UP</label>
+                                    <input type="text" id="customer-phone" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Up: Bapak Budi (0812-3456-7890)">
+                                </div>
+                            </div>
+                            <!-- Quotation Info -->
+                            <div>
+                                <label for="project-name" class="block text-sm font-medium text-gray-700">Nama Proyek</label>
+                                <input type="text" id="project-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label for="quotation-date" class="block text-sm font-medium text-gray-700">Tanggal Penawaran</label>
+                                <input type="date" id="quotation-date" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                             <div>
+                                <label for="valid-until-date" class="block text-sm font-medium text-gray-700">Berlaku Hingga</label>
+                                <input type="date" id="valid-until-date" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                             <div>
+                                <label for="marketing-id" class="block text-sm font-medium text-gray-700">Marketing</label>
+                                <select id="marketing-id" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></select>
+                            </div>
+                             <div class="md:col-span-2">
+                                <label for="quotation-number" class="block text-sm font-medium text-gray-700">Nomor Surat</label>
+                                <input type="text" id="quotation-number" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm bg-gray-100" readonly>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Bagian Item Penawaran -->
+                    <fieldset class="border p-4 rounded-lg">
+                        <legend class="text-lg font-semibold px-2">Item Penawaran</legend>
+                        
+                        <div class="flex items-center gap-4 mb-4">
+                            <select id="product-selector" class="block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></select>
+                            <button type="button" onclick="app.addItem()" class="bg-green-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-green-700 transition-colors duration-300 whitespace-nowrap">
+                                + Tambah Item
+                            </button>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-4 my-4 p-3 bg-gray-50 rounded-lg">
+                            <select id="template-selector" class="block w-full md:w-auto flex-grow p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></select>
+                            <button type="button" onclick="app.loadItemTemplate()" class="bg-sky-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-sky-700">Muat</button>
+                            <button type="button" onclick="app.saveItemTemplate()" class="bg-purple-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-purple-700">Simpan Jadi Template</button>
+                            <button type="button" onclick="app.showTemplateManager()" class="bg-gray-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-gray-700">Kelola</button>
+                        </div>
+                        
+                        <div id="item-list" class="space-y-2"></div>
+                        <div class="mt-4 text-right">
+                            <p class="text-xl font-bold">Total: <span id="total-amount">Rp 0</span></p>
+                        </div>
+                    </fieldset>
+
+                    <!-- Bagian Kondisi & Pembayaran -->
+                    <fieldset class="border p-4 rounded-lg">
+                        <legend class="text-lg font-semibold px-2">Kondisi & Pembayaran</legend>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="conditions" class="block text-sm font-medium text-gray-700">Kondisi Penawaran</label>
+                                <textarea id="conditions" rows="8" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+                            </div>
+                            <div>
+                                <label for="payment-method" class="block text-sm font-medium text-gray-700">Metode Pembayaran</label>
+                                <textarea id="payment-method" rows="8" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <div class="flex justify-end gap-4 pt-4">
+                        <button type="button" onclick="app.saveQuotation()" class="bg-blue-600 text-white font-bold px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-300 shadow-sm">
+                            Simpan Penawaran
+                        </button>
+                        <button type="button" onclick="app.showPDFPreview()" class="bg-teal-600 text-white font-bold px-6 py-3 rounded-lg hover:bg-teal-700 transition-colors duration-300 shadow-sm">
+                            Pratinjau PDF
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
         
-        function buildFullContent() {
-            const headInfo = `<div class="flex justify-between mb-8">
-                <p>No. <span class="font-bold">${document.getElementById('nomor-surat').value || '[Nomor Surat]'}</span></p>
-                <p>${formatDate(document.getElementById('tanggal-surat').value) || '[Tanggal Surat]'}</p>
-            </div>`;
+        <div id="pdf-preview-modal" class="modal">
+            <div class="fixed top-0 left-0 right-0 bg-white p-3 text-center z-20 shadow-lg" id="modal-controls">
+                <button onclick="document.getElementById('pdf-preview-modal').classList.remove('active')" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg mr-4">Tutup Pratinjau</button>
+                <button onclick="app.downloadPDF()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Unduh PDF</button>
+            </div>
+            <div id="preview-container" class="w-full h-full"></div>
+        </div>
 
-            const clientSection = `<section class="mb-8 avoid-break">
-                <p>Kepada Yth.:</p>
-                <p class="font-bold uppercase">${document.getElementById('nama-perusahaan').value || '[Nama Perusahaan]'}</p>
-                <div style="white-space: pre-wrap;">${document.getElementById('alamat-perusahaan').value || '[Alamat Perusahaan]'}</div>
-                <br>
-                <p>Up: <span class="font-semibold">${document.getElementById('up').value || '[Nama PIC]'}</span></p>
-            </section>`;
-            
-            const halSelect = document.getElementById('hal');
-            const halText = (halSelect.value === 'custom') ? (document.getElementById('hal-custom').value || '[Hal]') : halSelect.options[halSelect.selectedIndex].text;
-            const subjectSection = `<section class="mb-6 avoid-break">
-                <p class="font-bold underline">Perihal: <span>${halText}</span></p>
-                <p>Proyek: <span>${document.getElementById('proyek').value || '[Proyek]'}</span></p>
-            </section>`;
-            
-            const openingSection = `<section class="mb-6 avoid-break">
-                <p>Dengan hormat,</p>
-                <p>Menindaklanjuti permohonan penawaran harga resmi kami untuk proyek tersebut, maka bersama ini saya kirimkan harga produk kami sebagai berikut:</p>
-            </section>`;
+        <div id="template-manager-modal" class="modal fixed inset-0 bg-black bg-opacity-50 justify-center items-center p-4 z-50">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-lg flex flex-col">
+                <div class="p-4 border-b flex justify-between items-center">
+                    <h3 class="text-xl font-semibold">Kelola Template Item</h3>
+                    <button onclick="document.getElementById('template-manager-modal').classList.remove('active')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+                </div>
+                <div id="template-manager-list" class="p-4 space-y-2 max-h-[60vh] overflow-y-auto"></div>
+            </div>
+        </div>
 
-            let tableHTML = `<table class="w-full border-collapse border border-gray-400 mb-6 avoid-break">
-                <thead><tr class="bg-gray-200">
-                    <th class="border border-gray-300 p-2 text-center font-bold w-2/4">Material</th>
-                    <th class="border border-gray-300 p-2 font-bold text-center">Volume</th>
-                    <th class="border border-gray-300 p-2 font-bold text-center">Harga</th>
-                    <th class="border border-gray-300 p-2 font-bold text-center">Jumlah Harga</th>
-                </tr></thead><tbody>`;
-            let grandTotal = 0;
-            const itemRows = itemsContainer.querySelectorAll('.item-row');
-            itemRows.forEach(row => {
-                const material = row.querySelector('.item-material').value.replace(/\n/g, '<br>');
-                const volume = parseFloat(row.querySelector('.item-volume').value) || 0;
-                const harga = parseFloat(row.querySelector('.item-harga').value) || 0;
-                const jumlah = volume * harga;
-                grandTotal += jumlah;
-                tableHTML += `<tr>
-                    <td class="border border-gray-300 p-2 align-top">${material || '&nbsp;'}</td>
-                    <td class="border border-gray-300 p-2 text-center align-top">${volume.toLocaleString('id-ID')}</td>
-                    <td class="border border-gray-300 p-2 text-right align-top">${formatCurrency(harga)}</td>
-                    <td class="border border-gray-300 p-2 text-right align-top">${formatCurrency(jumlah)}</td>
-                </tr>`;
-            });
-            if (document.getElementById('show-total').checked && itemRows.length > 0) {
-                 tableHTML += `<tr>
-                    <td colspan="3" class="border border-gray-300 p-2 text-right font-bold">Total</td>
-                    <td class="border border-gray-300 p-2 text-right font-bold">${formatCurrency(grandTotal)}</td>
-                </tr>`;
+    </div>
+
+    <script>
+        const app = {
+            db: {
+                products: [
+                    { id: 1, name: 'GEOMEMBRANE HDPE', description: 'Merk: HUITEX 20 MIL\nKetebalan: 0,50mm\nDimensi Roll: 7m x 420m', unit: 'm²', price: 25000 },
+                    { id: 2, name: 'Instalasi Geomembrane', description: '', unit: 'LS', price: 38000000 },
+                    { id: 3, name: 'GEOTEXTILE NON-WOVEN', description: 'Merk: MULTITEX\nTipe: 200gr/m²', unit: 'm²', price: 8000 },
+                    { id: 4, name: 'Biaya Angkut', description: '1 Truk (Max. 7 Roll)', unit: 'Truk', price: 26000000 }
+                ],
+                marketing: [
+                    { id: 1, name: 'Ir. Krisandi Saptyanto', title: 'Design and Project Manager', phone: '+62-821-1012-8965', signatureImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgODAiPjxzdHlsZT4uc3Ryb2tlIHtzdHJva2U6IzAwMDtmaWxsOm5vbmU7c3Ryb2tlLXdpZHRoOjI7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO308L3N0eWxlPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik0xMCw1MEMxNSwzMCwzMCwxMCw1MCwyMGMxNSw4LDQwLTUsNTAtNWMxNSwwLDMwLDE1LDQwLDQwIEMxODAsNTUsMTgwLDMwLDE5MCw0MCIvPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik04MCw0MEw5MCw1MEwxMDAsNDBMMTEwLDUwIi8+PC9zdmc+' },
+                    { id: 2, name: 'Ir. Isparmo, IPM', title: 'Marketing Manager', phone: '0812 108 3060', signatureImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgODAiPjxzdHlsZT4uc3Ryb2tlIHtzdHJva2U6IzAwMDtmaWxsOm5vbmU7c3Ryb2tlLXdpZHRoOjI7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO308L3N0eWxlPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik0xMiw0OEMyMCwzNSwzNSwxNSw1NSwyNWMxOCw4LDM1LTIsNDUtMWMxMiwyLDMwLDEwLDQwLDMwIEMxNzAsNTAsMTc1LDMwLDE4OCw0MiIvPjwvc3ZnPg==' },
+                    { id: 3, name: 'Ir. Nuruzzaman', title: 'Technical & Marketing Manager', phone: '0811-877-022', signatureImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgODAiPjxzdHlsZT4uc3Ryb2tlIHtzdHJva2U6IzAwMDtmaWxsOm5vbmU7c3Ryb2tlLXdpZHRoOjI7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO308L3N0eWxlPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik0xNSw1MEMyMCwzMCw0MCwxMCw2MCwyMGMxOCw4LDM4LTUsNDgtNWMxMiwwLDM1LDE1LDQ1LDQwIEMxODAsNTUsMTg1LDMwLDE5MCw0NCIvPjwvc3ZnPg==' },
+                    { id: 4, name: 'Ir. Astri Juwita P.', title: 'Design & Product Manager', phone: '+62-812-9876-5432', signatureImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgODAiPjxzdHlsZT4uc3Ryb2tlIHtzdHJva2U6IzAwMDtmaWxsOm5vbmU7c3Ryb2tlLXdpZHRoOjI7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO308L3N0eWxlPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik0xMCw1NUMyNSwzNSw0NSwxNSw2NSwyMmMxOCw2LDQwLTgsNTAtMTBjMTUsLTMsMjUsMTgsMzUsNDIgQzE4MCw1MCwxODIsMzIsMTkwLDQxIi8+PC9zdmc+' }
+                ],
+                defaultConditions: `• Harga Material Locco Gudang Multibangun di Bitung, Tangerang.\n• Harga Material dan Instalasi belum termasuk PPN 11%.\n• Harga Instalasi tidak termasuk genset 10 kVA & dewatering pump.\n• Harga Instalasi tidak termasuk persiapan lahan dan pekerjaan tanah seperti penggalian, penimbunan dan pembuatan angkur.\n• Harga Instalasi tidak termasuk Unskilled labor (kuli gelar) dan besi angkur.\n• Harga Instalasi tidak termasuk peralatan tambahan seperti plat strip, baut, dll bila diperlukan.\n• Harga Instalasi tidak termasuk biaya langsir Material.\n• Harga Instalasi sudah termasuk akomodasi, transportasi, penginapan dan tes kesehatan untuk installer.\n• Harga Instalasi dengan asumsi pekerjaan dilakukan bukan pada musim hujan.`,
+                defaultPaymentMethod: `• Material: Cash in Advance.\n• Instalasi: DP 50%, sisa pelunasan sesuai dengan prosentase progress pekerjaan secara bertahap.\n• Pengambilan Material setelah Purchase Order dan pembayaran diterima.\n• Material Ready Stock.`
+            },
+            
+            state: {
+                quotations: [],
+                itemTemplates: [],
+                currentQuotationItems: [],
+            },
+
+            init() {
+                this.loadFromLocalStorage();
+                this.populateDropdowns();
+                this.renderQuotationList();
+                this.showList();
+            },
+
+            showList() {
+                document.getElementById('main-view').classList.remove('hidden');
+                document.getElementById('form-view').classList.add('hidden');
+                this.renderQuotationList();
+            },
+
+            showForm(id = null) {
+                document.getElementById('main-view').classList.add('hidden');
+                document.getElementById('form-view').classList.remove('hidden');
+                this.resetForm();
+
+                if (id !== null) {
+                    document.getElementById('form-title').innerText = 'Edit Penawaran';
+                    const quotation = this.state.quotations.find(q => q.id === id);
+                    if (quotation) {
+                        document.getElementById('quotation-id').value = quotation.id;
+                        document.getElementById('customer-name').value = quotation.customer.name;
+                        document.getElementById('customer-address').value = quotation.customer.address;
+                        document.getElementById('customer-phone').value = quotation.customer.phone;
+                        document.getElementById('marketing-id').value = quotation.marketingId;
+                        document.getElementById('project-name').value = quotation.projectName;
+                        document.getElementById('quotation-date').value = quotation.date;
+                        document.getElementById('quotation-number').value = quotation.number;
+                        document.getElementById('valid-until-date').value = quotation.validUntil;
+                        document.getElementById('conditions').value = quotation.conditions;
+                        document.getElementById('payment-method').value = quotation.paymentMethod;
+                        this.state.currentQuotationItems = JSON.parse(JSON.stringify(quotation.items));
+                    }
+                } else {
+                    document.getElementById('form-title').innerText = 'Buat Penawaran Baru';
+                    const today = new Date();
+                    document.getElementById('quotation-date').value = today.toISOString().split('T')[0];
+                    today.setDate(today.getDate() + 14);
+                    document.getElementById('valid-until-date').value = today.toISOString().split('T')[0];
+                    document.getElementById('quotation-number').value = this.generateQuotationNumber();
+                    document.getElementById('conditions').value = this.db.defaultConditions;
+                    document.getElementById('payment-method').value = this.db.defaultPaymentMethod;
+                }
+                this.renderItems();
+            },
+            
+            resetForm() {
+                document.getElementById('quotation-form').reset();
+                document.getElementById('quotation-id').value = '';
+                this.state.currentQuotationItems = [];
+                this.renderItems();
+            },
+
+            populateDropdowns() {
+                const productSelect = document.getElementById('product-selector');
+                productSelect.innerHTML = '<option value="">-- Pilih Item --</option>';
+                this.db.products.forEach(p => {
+                    productSelect.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+                });
+
+                const marketingSelect = document.getElementById('marketing-id');
+                marketingSelect.innerHTML = '<option value="">-- Pilih Marketing --</option>';
+                this.db.marketing.forEach(m => {
+                    marketingSelect.innerHTML += `<option value="${m.id}">${m.name}</option>`;
+                });
+                
+                this.populateTemplateDropdown();
+            },
+            
+            populateTemplateDropdown() {
+                const templateSelect = document.getElementById('template-selector');
+                templateSelect.innerHTML = '<option value="">-- Pilih Template Item --</option>';
+                this.state.itemTemplates.forEach(t => {
+                    templateSelect.innerHTML += `<option value="${t.id}">${t.name}</option>`;
+                });
+            },
+
+            renderQuotationList() {
+                const listEl = document.getElementById('quotation-list');
+                if (this.state.quotations.length === 0) {
+                    listEl.innerHTML = `<div class="text-center text-gray-500 py-8"><p class="text-lg">Belum ada penawaran.</p><p>Klik "Buat Penawaran Baru" untuk memulai.</p></div>`;
+                    return;
+                }
+                listEl.innerHTML = this.state.quotations.sort((a,b) => b.id - a.id).map(q => {
+                    return `<div class="border rounded-lg p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition-colors">
+                        <div>
+                            <p class="font-bold text-blue-700">${q.number}</p>
+                            <p class="text-gray-800">${q.customer.name} - ${q.projectName}</p>
+                            <p class="text-sm text-gray-500">Tanggal: ${this.formatDate(q.date)} | Total: ${this.formatCurrency(q.total)}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="app.showForm(${q.id})" class="text-blue-600 hover:text-blue-800 font-medium">Edit</button>
+                            <button onclick="app.deleteQuotation(${q.id})" class="text-red-600 hover:text-red-800 font-medium">Hapus</button>
+                        </div>
+                    </div>`;
+                }).join('');
+            },
+
+            renderItems() {
+                const itemListEl = document.getElementById('item-list');
+                if (this.state.currentQuotationItems.length === 0) {
+                    itemListEl.innerHTML = '<p class="text-center text-gray-400 py-4">Belum ada item ditambahkan.</p>';
+                } else {
+                     itemListEl.innerHTML = this.state.currentQuotationItems.map((item, index) => `
+                        <div class="grid grid-cols-12 gap-3 items-start p-2 rounded-md bg-gray-50">
+                            <div class="col-span-12 md:col-span-4"><p class="font-semibold">${item.name}</p><p class="text-xs text-gray-500 whitespace-pre-wrap">${item.description}</p></div>
+                            <div class="col-span-6 md:col-span-2"><label class="text-sm text-gray-500">Volume</label><input type="text" inputmode="decimal" value="${item.volume}" oninput="app.updateItemLive(this, ${index}, 'volume')" class="w-full p-1 border rounded-md"></div>
+                            <div class="col-span-6 md:col-span-1 text-center"><p class="text-sm text-gray-500 mt-6">${item.unit}</p></div>
+                            <div class="col-span-6 md:col-span-2"><label class="text-sm text-gray-500">Harga Satuan (Rp)</label><input type="text" inputmode="decimal" value="${this.formatCurrencyForInput(item.price)}" oninput="app.updateItemLive(this, ${index}, 'price')" class="w-full p-1 border rounded-md"></div>
+                            <div class="col-span-5 md:col-span-2 text-right"><p class="text-sm text-gray-500">Jumlah</p><p id="item-total-${index}" class="font-semibold">${this.formatCurrency(item.total)}</p></div>
+                            <div class="col-span-1 text-right"><button type="button" onclick="app.removeItem(${index})" class="text-red-500 hover:text-red-700 p-2 mt-4 font-bold text-lg">&times;</button></div>
+                        </div>`).join('');
+                }
+                this.calculateTotal();
+            },
+
+             addItem() {
+                const productId = document.getElementById('product-selector').value;
+                if (!productId) return;
+                const product = this.db.products.find(p => p.id == productId);
+                if (product) {
+                    this.state.currentQuotationItems.push({ ...product, volume: 1, total: product.price });
+                    this.renderItems();
+                }
+                 document.getElementById('product-selector').value = '';
+            },
+
+            removeItem(index) {
+                this.state.currentQuotationItems.splice(index, 1);
+                this.renderItems();
+            },
+
+            updateItemLive(element, index, field) {
+                const item = this.state.currentQuotationItems[index];
+                if (!item) return;
+                let numericValue = (field === 'price') ? this.unformatCurrency(element.value) : (parseFloat(element.value.replace(/,/g, '.')) || 0);
+                if (field === 'price') element.value = this.formatCurrencyForInput(numericValue);
+                item[field] = numericValue;
+                item.total = (item.volume || 0) * (item.price || 0);
+                document.getElementById(`item-total-${index}`).innerText = this.formatCurrency(item.total);
+                this.calculateTotal();
+            },
+            
+            calculateTotal() {
+                const total = this.state.currentQuotationItems.reduce((sum, item) => sum + (item.total || 0), 0);
+                document.getElementById('total-amount').innerText = this.formatCurrency(total);
+                return total;
+            },
+
+            saveQuotation(showListAfterSave = true) {
+                const id = document.getElementById('quotation-id').value;
+                const customerData = {
+                    name: document.getElementById('customer-name').value.trim(),
+                    address: document.getElementById('customer-address').value.trim(),
+                    phone: document.getElementById('customer-phone').value.trim()
+                };
+                const marketingId = document.getElementById('marketing-id').value;
+
+                if (!customerData.name) { alert("Silakan isi nama pelanggan."); return null; }
+                if (!marketingId) { alert("Silakan pilih marketing."); return null; }
+
+                let quotationData = {
+                    customer: customerData,
+                    marketingId: parseInt(marketingId),
+                    projectName: document.getElementById('project-name').value,
+                    date: document.getElementById('quotation-date').value,
+                    number: document.getElementById('quotation-number').value,
+                    validUntil: document.getElementById('valid-until-date').value,
+                    items: this.state.currentQuotationItems,
+                    conditions: document.getElementById('conditions').value,
+                    paymentMethod: document.getElementById('payment-method').value,
+                    total: this.calculateTotal()
+                };
+
+                if (id) {
+                    const index = this.state.quotations.findIndex(q => q.id == id);
+                    if (index > -1) {
+                         this.state.quotations[index] = { ...this.state.quotations[index], ...quotationData };
+                         quotationData.id = parseInt(id);
+                    }
+                } else {
+                    quotationData.id = Date.now();
+                    this.state.quotations.push(quotationData);
+                }
+                
+                this.saveToLocalStorage();
+                if(showListAfterSave) this.showList();
+                return quotationData;
+            },
+            
+            deleteQuotation(id) {
+                if(confirm('Apakah Anda yakin ingin menghapus penawaran ini?')) {
+                    this.state.quotations = this.state.quotations.filter(q => q.id !== id);
+                    this.saveToLocalStorage();
+                    this.renderQuotationList();
+                }
+            },
+
+            showTemplateManager() {
+                this.renderTemplateManager();
+                document.getElementById('template-manager-modal').classList.add('active');
+            },
+
+            renderTemplateManager() {
+                const listEl = document.getElementById('template-manager-list');
+                if (this.state.itemTemplates.length === 0) {
+                    listEl.innerHTML = '<p class="text-center text-gray-500 py-4">Belum ada template tersimpan.</p>';
+                    return;
+                }
+                listEl.innerHTML = this.state.itemTemplates.map(t => `
+                    <div class="flex justify-between items-center p-2 border rounded-md">
+                        <span>${t.name}</span>
+                        <div>
+                            <button onclick="app.editTemplateName(${t.id})" class="text-sm text-blue-600 hover:underline mr-2">Edit Nama</button>
+                            <button onclick="app.deleteTemplate(${t.id})" class="text-sm text-red-600 hover:underline">Hapus</button>
+                        </div>
+                    </div>`).join('');
+            },
+            
+            editTemplateName(id) {
+                const template = this.state.itemTemplates.find(t => t.id === id);
+                if(!template) return;
+                const newName = prompt('Masukkan nama template baru:', template.name);
+                if (newName && newName.trim() !== '') {
+                    template.name = newName.trim();
+                    this.saveToLocalStorage();
+                    this.renderTemplateManager();
+                    this.populateTemplateDropdown();
+                }
+            },
+
+            deleteTemplate(id) {
+                if (confirm('Apakah Anda yakin ingin menghapus template ini?')) {
+                    this.state.itemTemplates = this.state.itemTemplates.filter(t => t.id !== id);
+                    this.saveToLocalStorage();
+                    this.renderTemplateManager();
+                    this.populateTemplateDropdown();
+                }
+            },
+
+            saveItemTemplate() {
+                if (this.state.currentQuotationItems.length === 0) {
+                    alert('Tidak ada item untuk disimpan sebagai template.');
+                    return;
+                }
+                const templateName = prompt('Masukkan nama untuk template ini:', '');
+                if (templateName && templateName.trim() !== '') {
+                    const newTemplate = {
+                        id: Date.now(),
+                        name: templateName.trim(),
+                        items: JSON.parse(JSON.stringify(this.state.currentQuotationItems))
+                    };
+                    this.state.itemTemplates.push(newTemplate);
+                    this.saveToLocalStorage();
+                    this.populateTemplateDropdown();
+                    alert(`Template "${templateName}" berhasil disimpan!`);
+                }
+            },
+            
+            loadItemTemplate() {
+                const templateId = document.getElementById('template-selector').value;
+                if (!templateId) return;
+                const template = this.state.itemTemplates.find(t => t.id == templateId);
+                if (template) {
+                    this.state.currentQuotationItems = JSON.parse(JSON.stringify(template.items));
+                    this.renderItems();
+                }
+            },
+            
+             generateQuotationNumber() {
+                const date = new Date();
+                const year = date.getFullYear();
+                if (this.state.quotations.length === 0) return `228/MRP/PWRN/${this.toRoman(date.getMonth() + 1)}/${year}`;
+                const lastQuotation = this.state.quotations.sort((a,b) => b.id - a.id)[0];
+                const lastNumber = parseInt(lastQuotation.number.split('/')[0]) || 227;
+                return `${lastNumber + 1}/MRP/PWRN/${this.toRoman(date.getMonth() + 1)}/${year}`;
+            },
+            
+            toRoman(num) {
+                const roman = {M:1000,CM:900,D:500,CD:400,C:100,XC:90,L:50,XL:40,X:10,IX:9,V:5,IV:4,I:1};
+                let str = '';
+                for (let i of Object.keys(roman)) {
+                    let q = Math.floor(num / roman[i]);
+                    num -= q * roman[i];
+                    str += i.repeat(q);
+                }
+                return str;
+            },
+            
+            formatCurrency: (amount) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount || 0),
+            formatCurrencyForInput: (value) => (value === null || value === undefined) ? '' : new Intl.NumberFormat('id-ID').format(value),
+            unformatCurrency: (value) => parseFloat(String(value).replace(/[^0-9]/g, '')) || 0,
+            formatDate(dateString) {
+                if (!dateString) return '';
+                const date = new Date(dateString + 'T00:00:00');
+                return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(date);
+            },
+
+            saveToLocalStorage() {
+                const dataToSave = { quotations: this.state.quotations, itemTemplates: this.state.itemTemplates };
+                localStorage.setItem('quotationAppData', JSON.stringify(dataToSave));
+            },
+            
+            loadFromLocalStorage() {
+                const data = localStorage.getItem('quotationAppData');
+                if (data) {
+                    const parsedData = JSON.parse(data);
+                    this.state.quotations = parsedData.quotations || [];
+                    this.state.itemTemplates = parsedData.itemTemplates || [];
+                }
+            },
+
+            showPDFPreview() {
+                const quotation = this.saveQuotation(false);
+                if (quotation) {
+                    this.generateAndPaginateContent(quotation);
+                    document.getElementById('pdf-preview-modal').classList.add('active');
+                }
+            },
+
+            createNewPage() {
+                const page = document.createElement('div');
+                page.className = 'page';
+                page.innerHTML = `<img class="page-header-img" src="https://raw.githack.com/krisandi89/penawaranmrp/main/kop%20surat%20multibangun.png" alt="Kop Surat"><div class="page-content-wrapper"><div class="page-content-inner"></div></div>`;
+                document.getElementById('preview-container').appendChild(page);
+                return page.querySelector('.page-content-inner');
+            },
+
+            generateAndPaginateContent(quotation) {
+                const previewContainer = document.getElementById('preview-container');
+                previewContainer.innerHTML = '';
+                let currentContentContainer = this.createNewPage();
+                const allContentElements = this.buildAllContentElements(quotation);
+
+                for (const el of allContentElements) {
+                    currentContentContainer.appendChild(el);
+                    if (currentContentContainer.parentElement.parentElement.scrollHeight > currentContentContainer.parentElement.parentElement.offsetHeight) {
+                        el.remove();
+                        currentContentContainer = this.createNewPage();
+                        currentContentContainer.appendChild(el);
+
+                        // Special handling for split tables
+                        if (el.tagName === 'TABLE') {
+                            const header = el.querySelector('thead');
+                            if(header) {
+                                const newTable = currentContentContainer.querySelector('table');
+                                if(newTable) newTable.prepend(header.cloneNode(true));
+                            }
+                        }
+                    }
+                }
+            },
+
+            buildAllContentElements(quotation) {
+                const fragment = document.createDocumentFragment();
+                const customer = quotation.customer;
+                const marketingPerson = this.db.marketing.find(m => m.id == quotation.marketingId);
+
+                const headInfo = document.createElement('div');
+                headInfo.style.display = 'flex';
+                headInfo.style.justifyContent = 'space-between';
+                headInfo.style.marginBottom = '2rem';
+                headInfo.innerHTML = `<p>No. <span style="font-weight: bold;">${quotation.number}</span></p><p>${this.formatDate(quotation.date)}</p>`;
+                fragment.appendChild(headInfo);
+
+                const clientSection = document.createElement('section');
+                clientSection.innerHTML = `<p>Kepada Yth.:</p>
+                                        <p style="font-weight: bold; text-transform: uppercase;">${customer.name}</p>
+                                        <div style="white-space: pre-wrap;">${customer.address}</div><br>
+                                        <p style="white-space: pre-wrap;">${customer.phone}</p>`;
+                fragment.appendChild(clientSection);
+
+                const subjectSection = document.createElement('section');
+                subjectSection.style.margin = '1.5rem 0';
+                subjectSection.innerHTML = `<p style="font-weight: bold; text-decoration: underline;">Perihal: <span>Penawaran Harga</span></p>
+                                          <p>Proyek: <span>${quotation.projectName}</span></p>`;
+                fragment.appendChild(subjectSection);
+
+                const openingSection = document.createElement('section');
+                openingSection.style.marginBottom = '1.5rem';
+                openingSection.innerHTML = `<p>Dengan hormat,</p><p>Menindaklanjuti permohonan penawaran harga resmi kami untuk proyek tersebut, maka bersama ini saya kirimkan harga produk kami sebagai berikut:</p>`;
+                fragment.appendChild(openingSection);
+
+                const table = document.createElement('table');
+                let tableHTML = `<thead><tr><th style="width: 45%;">Material</th><th>Volume</th><th>Harga</th><th>Jumlah Harga</th></tr></thead><tbody>`;
+                quotation.items.forEach(item => {
+                    tableHTML += `<tr><td><div style="font-weight: bold;">${item.name}</div><div style="font-size: 8pt; white-space: pre-wrap;">${item.description}</div></td><td style="text-align: center;">${this.formatCurrencyForInput(item.volume)} ${item.unit}</td><td style="text-align: right;">${this.formatCurrency(item.price)}</td><td style="text-align: right;">${this.formatCurrency(item.total)}</td></tr>`;
+                });
+                tableHTML += `<tr><td colspan="3" style="text-align: right; font-weight: bold;">Total</td><td style="text-align: right; font-weight: bold;">${this.formatCurrency(quotation.total)}</td></tr>`;
+                table.innerHTML = tableHTML + '</tbody>';
+                fragment.appendChild(table);
+
+                 const createSection = (title, content) => {
+                    const section = document.createElement('section');
+                    section.style.marginTop = '1.5rem';
+                    section.innerHTML = `<h4 style="font-weight: bold;">${title}</h4><div style="padding-left: 1rem; white-space: pre-wrap; font-size: 9pt;">${content}</div>`;
+                    return section;
+                };
+                fragment.appendChild(createSection('Kondisi Penawaran :', quotation.conditions));
+                fragment.appendChild(createSection('Metode Pembayaran :', quotation.paymentMethod));
+                
+                const closingSection = document.createElement('section');
+                closingSection.style.marginTop = '1.5rem';
+                closingSection.innerHTML = `<p>Penawaran harga ini berlaku sampai dengan tanggal <span style="font-weight: bold;">${this.formatDate(quotation.validUntil)}</span>.</p><br><p>Demikian penawaran harga ini kami sampaikan. Atas perhatian dan kerjasamanya kami ucapkan terima kasih.</p>`;
+                fragment.appendChild(closingSection);
+
+                if (marketingPerson) {
+                    const signatureSection = document.createElement('footer');
+                    signatureSection.style.marginTop = '2rem';
+                    signatureSection.innerHTML = `<p>Hormat kami,</p>
+                                                <div style="height: 6rem; position: relative;"><img src="${marketingPerson.signatureImg}" alt="Tanda Tangan" style="height: 6rem;"></div>
+                                                <p style="font-weight: bold;">${marketingPerson.name}</p>
+                                                <p style="font-style: italic;">${marketingPerson.title}</p>
+                                                <p>${marketingPerson.phone}</p>`;
+                    fragment.appendChild(signatureSection);
+                }
+
+                return Array.from(fragment.children);
+            },
+            
+            downloadPDF() {
+                const element = document.getElementById('preview-container');
+                const quotation = this.saveQuotation(false);
+                const opt = {
+                    margin: 0,
+                    filename: `${quotation.number.replace(/\//g, '-')}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true },
+                    jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' }
+                };
+                html2pdf().from(element).set(opt).save();
             }
-            tableHTML += '</tbody></table>';
+        };
 
-            const conditionsSection = `<section class="mb-6 avoid-break">
-                <h4 class="font-bold mb-1">Kondisi Penawaran :</h4>
-                <div class="pl-4" style="white-space: pre-wrap;">${document.getElementById('kondisi-penawaran-text').value}</div>
-            </section>`;
-            
-            const paymentSection = `<section class="mb-6 avoid-break">
-                <h4 class="font-bold mb-1">Metode Pembayaran :</h4>
-                <div class="pl-4" style="white-space: pre-wrap;">${document.getElementById('metode-pembayaran-text').value}</div>
-            </section>`;
-
-            const deliverySection = `<section class="mb-6 avoid-break"><p>${document.getElementById('term-pengambilan-text').value || ''}</p></section>`;
-
-            const closingSection = `<section class="mb-4 avoid-break">
-                <p>Penawaran harga ini berlaku sampai dengan tanggal <span class="font-bold">${formatDate(document.getElementById('berlaku-hingga').value) || '[Tanggal Berlaku]'}</span>.</p><br>
-                <p>Demikian penawaran harga ini kami sampaikan. Atas perhatian dan kerjasamanya kami ucapkan terima kasih.</p>
-            </section>`;
-            
-            const selectedSignatoryKey = document.getElementById('penanda-tangan').value;
-            const signatory = signatoryData[selectedSignatoryKey];
-            let signatureSection = '';
-            if (signatory) {
-                signatureSection = `<footer class="mt-4 signature-section avoid-break">
-                    <p>Hormat kami,</p>
-                    <div class="h-24 relative">
-                       <img src="${signatory.signatureImg}" alt="Tanda Tangan" class="h-24 mix-blend-darken absolute left-0 top-0">
-                    </div>
-                    <p class="font-bold">${signatory.name}</p>
-                    <p class="italic">${signatory.title}</p>
-                    <p>${signatory.contact}</p>
-                </footer>`;
-            }
-            
-            return headInfo + clientSection + subjectSection + openingSection + tableHTML + conditionsSection + paymentSection + deliverySection + closingSection + signatureSection;
-        }
-
-        function addItemRow() {
-            const itemDiv = document.createElement('div');
-            itemDiv.className = 'item-row p-3 border rounded-md bg-white relative';
-            itemDiv.innerHTML = `
-                <button type="button" class="remove-item absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold text-xl p-1 leading-none">&times;</button>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div class="md:col-span-3">
-                        <label class="block text-sm font-medium text-gray-700">Material (Deskripsi)</label>
-                        <textarea rows="3" class="item-material mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm" placeholder="GEOMEMBRANE HDPE&#10;Merk: HUITEX&#10;Ketebalan: 0,75mm"></textarea>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Volume</label>
-                        <input type="number" class="item-volume mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm" placeholder="15000">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Harga Satuan</label>
-                        <input type="number" class="item-harga mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm" placeholder="38000">
-                    </div>
-                </div>`;
-            itemsContainer.appendChild(itemDiv);
-            itemDiv.querySelector('.remove-item').addEventListener('click', (e) => e.target.closest('.item-row').remove());
-        }
-        
-        // --- EVENT LISTENERS ---
-        document.getElementById('preview-button').addEventListener('click', () => {
-            generatePages();
-            previewModal.style.display = 'block';
-            document.body.style.overflow = 'hidden';
-        });
-
-        document.getElementById('close-modal').addEventListener('click', () => {
-            previewModal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        });
-
-        document.getElementById('add-item').addEventListener('click', addItemRow);
-
-        document.getElementById('hal').addEventListener('change', (e) => {
-            const customInput = document.getElementById('hal-custom');
-            customInput.style.display = (e.target.value === 'custom') ? 'block' : 'none';
-            if (e.target.value === 'custom') customInput.focus();
-        });
-
-        document.getElementById('generate-pdf-modal').addEventListener('click', () => {
-            const element = document.getElementById('preview-container');
-            const opt = {
-              margin:       0,
-              filename:     `Penawaran - ${document.getElementById('nama-perusahaan').value.replace(/[^a-z0-9]/gi, '_') || 'file'}.pdf`,
-              image:        { type: 'jpeg', quality: 0.98 },
-              html2canvas:  { 
-                  scale: 2, 
-                  useCORS: true, 
-                  allowTaint: true,
-                  letterRendering: true, 
-                  backgroundColor: '#ffffff' 
-              },
-              jsPDF:        { unit: 'cm', format: 'a4', orientation: 'portrait' }
-            };
-            html2pdf().from(element).set(opt).save();
-        });
-
-        // --- INITIALIZATION ---
-        function init() {
-            const today = new Date();
-            const yyyy = today.getFullYear();
-            const mm = String(today.getMonth() + 1).padStart(2, '0');
-            const dd = String(today.getDate()).padStart(2, '0');
-            document.getElementById('tanggal-surat').value = `${yyyy}-${mm}-${dd}`;
-
-            const expiryDate = new Date();
-            expiryDate.setDate(today.getDate() + 14);
-            const exp_yyyy = expiryDate.getFullYear();
-            const exp_mm = String(expiryDate.getMonth() + 1).padStart(2, '0');
-            const exp_dd = String(expiryDate.getDate()).padStart(2, '0');
-            document.getElementById('berlaku-hingga').value = `${exp_yyyy}-${exp_mm}-${exp_dd}`;
-
-            const signatorySelect = document.getElementById('penanda-tangan');
-            Object.keys(signatoryData).forEach(key => {
-                const option = document.createElement('option');
-                option.value = key;
-                option.textContent = signatoryData[key].name;
-                signatorySelect.appendChild(option);
-            });
-            signatorySelect.value = 'krisandi';
-
-            // Hanya menggunakan 1 template saja
-            document.getElementById('kondisi-penawaran-text').value = conditionTemplate;
-            document.getElementById('metode-pembayaran-text').value = paymentTemplate;
-            document.getElementById('term-pengambilan-text').value = deliveryTermTemplate;
-
-            // Hanya menambahkan 1 item saja (tidak 10 seperti sebelumnya)
-            addItemRow();
-        }
-
-        init();
-    });
+        document.addEventListener('DOMContentLoaded', () => { app.init(); });
     </script>
 </body>
 </html>
+
