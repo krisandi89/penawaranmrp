@@ -37,9 +37,14 @@
             height: 29.7cm;
             margin: 0 auto 1.5rem auto;
             position: relative;
-            overflow: hidden; /* Important for positioning children */
+            overflow: hidden;
+            page-break-after: always;
         }
 
+        .page:last-child {
+            page-break-after: auto;
+        }
+        
         .page-header-img {
             position: absolute;
             top: 0;
@@ -54,7 +59,7 @@
             bottom: 3.5cm; /* Bottom margin */
             left: 2.5cm;
             right: 2cm;
-            overflow: hidden; /* This hides content that overflows */
+            overflow: hidden;
         }
 
         .page-content-inner {
@@ -62,6 +67,28 @@
             line-height: 1.5;
         }
 
+        /* Kelas untuk mencegah elemen terpotong */
+        .avoid-break {
+            page-break-inside: avoid;
+            break-inside: avoid;
+            overflow: hidden;
+        }
+
+        /* Pastikan header dan footer tidak terpotong */
+        h3, h4, table, footer, .signature-section {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        /* Tambahkan margin bawah pada elemen untuk mencegah konten terlalu dekat dengan batas halaman */
+        p, div, table {
+            margin-bottom: 0.5cm;
+        }
+
+        /* Tambahkan space untuk footer */
+        .page-content-inner > *:last-child {
+            margin-bottom: 2cm;
+        }
 
         /* Print styles */
         @media print {
@@ -242,7 +269,7 @@
                 name: 'Ir. Krisandi Saptyanto',
                 title: 'Design and Project Manager',
                 contact: '+62-821-1012-8965',
-                signatureImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgODAiPjxzdHlsZT4uc3Ryb2tlIHtzdHJva2U6IzAwMDtmaWxsOm5vbmU7c3Ryb2tlLXdpZHRoOjI7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO308L3N0eWxlPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik0xMCw1MEMxNSwzMCwzMCwxMCw1MCwyMGMxNSw4LDQwLTUsNTAtNWMxNSwwLDMwLDE1LDQwLDQwIEMxODAsNTAsMTgwLDMwLDE5MCw0MCIvPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik04MCw0MEw5MCw1MEwxMDAsNDBMMTEwLDUwIi8+PC9zdmc+'
+                signatureImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgODAiPjxzdHlsZT4uc3Ryb2tlIHtzdHJva2U6IzAwMDtmaWxsOm5vbmU7c3Ryb2tlLXdpZHRoOjI7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO308L3N0eWxlPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik0xMCw1MEMxNSwzMCwzMCwxMCw1MCwyMGMxNSw4LDQwLTUsNTAtNWMxNSwwLDMwLDE1LDQwLDQwIEMxODAsNTUsMTgwLDMwLDE5MCw0MCIvPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik04MCw0MEw5MCw1MEwxMDAsNDBMMTEwLDUwIi8+PC9zdmc+'
             },
             isparmo: {
                 name: 'Ir. Isparmo, IPM',
@@ -300,106 +327,32 @@
         const previewModal = document.getElementById('preview-modal');
         const previewContainer = document.getElementById('preview-container');
 
-        // --- NEW PAGINATION LOGIC (REBUILT) ---
-        async function generatePages() {
+        // --- GENERATE PAGES WITH CSS-BASED PAGINATION ---
+        function generatePages() {
             previewContainer.innerHTML = '';
             
-            // 1. Create a single, continuous block of the full content in a hidden div
-            const offscreenRenderer = document.createElement('div');
-            offscreenRenderer.style.position = 'absolute';
-            offscreenRenderer.style.left = '-9999px';
-            offscreenRenderer.style.width = '16.5cm'; // 21cm - 2.5cm - 2cm margins
-            document.body.appendChild(offscreenRenderer);
-            offscreenRenderer.innerHTML = buildFullContent();
-
-            const allNodes = Array.from(offscreenRenderer.childNodes);
-            offscreenRenderer.innerHTML = '';
-
-            let pageNum = 0;
-            let currentPageContent;
+            // Buat halaman pertama dengan kop surat
+            const firstPage = document.createElement('div');
+            firstPage.className = 'page';
+            firstPage.innerHTML = `
+                <img class="page-header-img" src="https://github.com/krisandi89/penawaranmrp/blob/main/kop%20surat%20multibangun.png?raw=true">
+                <div class="page-content-wrapper">
+                    <div class="page-content-inner">
+                        ${buildFullContent()}
+                    </div>
+                </div>
+            `;
             
-            const createNewPage = () => {
-                pageNum++;
-                const page = document.createElement('div');
-                page.className = `page`;
-                
-                const headerImg = document.createElement('img');
-                headerImg.className = 'page-header-img';
-                headerImg.src = pageNum > 1 
-                    ? 'https://github.com/krisandi89/penawaranmrp/blob/main/Kop%20SUrat%20Multibangun%20halaman%202.png?raw=true'
-                    : 'https://github.com/krisandi89/penawaranmrp/blob/main/kop%20surat%20multibangun.png?raw=true';
-                
-                const contentWrapper = document.createElement('div');
-                contentWrapper.className = 'page-content-wrapper';
-                
-                const contentInner = document.createElement('div');
-                contentInner.className = 'page-content-inner';
-
-                contentWrapper.appendChild(contentInner);
-                page.appendChild(headerImg);
-                page.appendChild(contentWrapper);
-                previewContainer.appendChild(page);
-                
-                return contentInner;
-            };
-
-            currentPageContent = createNewPage();
-            const maxContentHeight = currentPageContent.parentElement.offsetHeight;
-
-            for (const node of allNodes) {
-                // Special handling for tables to break them by row
-                if (node.tagName === 'TABLE') {
-                    const thead = node.querySelector('thead').cloneNode(true);
-                    const rows = Array.from(node.querySelector('tbody').children);
-
-                    let tempTable = document.createElement('table');
-                    tempTable.className = node.className;
-                    tempTable.appendChild(thead);
-                    let tempTbody = document.createElement('tbody');
-                    tempTable.appendChild(tempTbody);
-                    
-                    if (currentPageContent.scrollHeight + thead.offsetHeight > maxContentHeight) {
-                        currentPageContent = createNewPage();
-                    }
-                    currentPageContent.appendChild(tempTable);
-
-                    for (const row of rows) {
-                        tempTbody.appendChild(row.cloneNode(true));
-                        if (currentPageContent.scrollHeight > maxContentHeight) {
-                            tempTbody.removeChild(row);
-                            currentPageContent = createNewPage();
-                            tempTable = document.createElement('table');
-                            tempTable.className = node.className;
-                            tempTable.appendChild(thead.cloneNode(true));
-                            tempTbody = document.createElement('tbody');
-                            tempTable.appendChild(tempTbody);
-                            tempTbody.appendChild(row.cloneNode(true));
-                            currentPageContent.appendChild(tempTable);
-                        }
-                    }
-                } else {
-                    // Handle all other elements
-                    currentPageContent.appendChild(node.cloneNode(true));
-                    if (currentPageContent.scrollHeight > maxContentHeight) {
-                        currentPageContent.removeChild(node);
-                        currentPageContent = createNewPage();
-                        currentPageContent.appendChild(node.cloneNode(true));
-                    }
-                }
-            }
-
-            document.body.removeChild(offscreenRenderer);
+            previewContainer.appendChild(firstPage);
         }
         
         function buildFullContent() {
-            // This function returns the HTML STRING of the entire document content.
-            
             const headInfo = `<div class="flex justify-between mb-8">
                 <p>No. <span class="font-bold">${document.getElementById('nomor-surat').value || '[Nomor Surat]'}</span></p>
                 <p>${formatDate(document.getElementById('tanggal-surat').value) || '[Tanggal Surat]'}</p>
             </div>`;
 
-            const clientSection = `<section class="mb-8">
+            const clientSection = `<section class="mb-8 avoid-break">
                 <p>Kepada Yth.:</p>
                 <p class="font-bold uppercase">${document.getElementById('nama-perusahaan').value || '[Nama Perusahaan]'}</p>
                 <div style="white-space: pre-wrap;">${document.getElementById('alamat-perusahaan').value || '[Alamat Perusahaan]'}</div>
@@ -409,17 +362,17 @@
             
             const halSelect = document.getElementById('hal');
             const halText = (halSelect.value === 'custom') ? (document.getElementById('hal-custom').value || '[Hal]') : halSelect.options[halSelect.selectedIndex].text;
-            const subjectSection = `<section class="mb-6">
+            const subjectSection = `<section class="mb-6 avoid-break">
                 <p class="font-bold underline">Perihal: <span>${halText}</span></p>
                 <p>Proyek: <span>${document.getElementById('proyek').value || '[Proyek]'}</span></p>
             </section>`;
             
-            const openingSection = `<section class="mb-6">
+            const openingSection = `<section class="mb-6 avoid-break">
                 <p>Dengan hormat,</p>
                 <p>Menindaklanjuti permohonan penawaran harga resmi kami untuk proyek tersebut, maka bersama ini saya kirimkan harga produk kami sebagai berikut:</p>
             </section>`;
 
-            let tableHTML = `<table class="w-full border-collapse border border-gray-400 mb-6">
+            let tableHTML = `<table class="w-full border-collapse border border-gray-400 mb-6 avoid-break">
                 <thead><tr class="bg-gray-200">
                     <th class="border border-gray-300 p-2 text-center font-bold w-2/4">Material</th>
                     <th class="border border-gray-300 p-2 font-bold text-center">Volume</th>
@@ -449,19 +402,19 @@
             }
             tableHTML += '</tbody></table>';
 
-            const conditionsSection = `<section class="mb-6">
+            const conditionsSection = `<section class="mb-6 avoid-break">
                 <h4 class="font-bold mb-1">Kondisi Penawaran :</h4>
                 <div class="pl-4" style="white-space: pre-wrap;">${document.getElementById('kondisi-penawaran-text').value}</div>
             </section>`;
             
-            const paymentSection = `<section class="mb-6">
+            const paymentSection = `<section class="mb-6 avoid-break">
                 <h4 class="font-bold mb-1">Metode Pembayaran :</h4>
                 <div class="pl-4" style="white-space: pre-wrap;">${document.getElementById('metode-pembayaran-text').value}</div>
             </section>`;
 
-            const deliverySection = `<section class="mb-6"><p>${document.getElementById('term-pengambilan-text').value || ''}</p></section>`;
+            const deliverySection = `<section class="mb-6 avoid-break"><p>${document.getElementById('term-pengambilan-text').value || ''}</p></section>`;
 
-            const closingSection = `<section class="mb-4">
+            const closingSection = `<section class="mb-4 avoid-break">
                 <p>Penawaran harga ini berlaku sampai dengan tanggal <span class="font-bold">${formatDate(document.getElementById('berlaku-hingga').value) || '[Tanggal Berlaku]'}</span>.</p><br>
                 <p>Demikian penawaran harga ini kami sampaikan. Atas perhatian dan kerjasamanya kami ucapkan terima kasih.</p>
             </section>`;
@@ -470,7 +423,7 @@
             const signatory = signatoryData[selectedSignatoryKey];
             let signatureSection = '';
             if (signatory) {
-                signatureSection = `<footer class="mt-4" style="page-break-inside: avoid;">
+                signatureSection = `<footer class="mt-4 signature-section avoid-break">
                     <p>Hormat kami,</p>
                     <div class="h-24 relative">
                        <img src="${signatory.signatureImg}" alt="Tanda Tangan" class="h-24 mix-blend-darken absolute left-0 top-0">
@@ -574,7 +527,10 @@
             document.getElementById('metode-pembayaran-text').value = paymentTemplates.default;
             document.getElementById('term-pengambilan-text').value = deliveryTermTemplates.default;
 
-            for(let i=0; i<8; i++) { addItemRow(); } // Add enough items to test pagination
+            // Tambahkan beberapa item untuk test paginasi
+            for(let i=0; i<10; i++) { 
+                addItemRow(); 
+            }
         }
 
         init();
@@ -582,4 +538,3 @@
     </script>
 </body>
 </html>
-
