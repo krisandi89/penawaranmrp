@@ -102,7 +102,7 @@
                 <div class="p-4 border-b flex justify-between items-center bg-gray-50">
                     <h3 class="text-xl font-semibold">Pratinjau Dokumen</h3>
                     <div>
-                        <button onclick="app.downloadGeneratedDOCX()" class="bg-teal-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-teal-700 shadow-sm mr-2">Unduh DOCX</button>
+                        <button id="docx-download-button" onclick="app.downloadGeneratedDOCX()" class="bg-teal-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-teal-700 shadow-sm mr-2" disabled>Mempersiapkan...</button>
                         <button onclick="document.getElementById('docx-preview-modal').classList.remove('active')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
                     </div>
                 </div>
@@ -342,16 +342,32 @@
             async showDOCXPreview() {
                 const quotation = this.saveQuotation(false);
                 if (!quotation) return;
+
+                const downloadBtn = document.getElementById('docx-download-button');
+                downloadBtn.disabled = true;
+                downloadBtn.textContent = 'Mempersiapkan...';
+                
+                document.getElementById('docx-preview-modal').classList.add('active');
                 this.showToast('Mempersiapkan pratinjau...');
+                
                 const contentHtml = await this.buildDocxHtml(quotation);
-                const fileBuffer = await htmlToDocx.asBlob(contentHtml);
-                this.state.currentDocxBlob = fileBuffer;
                 const iframe = document.getElementById('docx-preview-iframe');
                 iframe.srcdoc = contentHtml;
-                document.getElementById('docx-preview-modal').classList.add('active');
+                
+                try {
+                    const fileBuffer = await htmlToDocx.asBlob(contentHtml);
+                    this.state.currentDocxBlob = fileBuffer;
+                    downloadBtn.disabled = false;
+                    downloadBtn.textContent = 'Unduh DOCX';
+                    this.showToast('Pratinjau siap. Anda bisa mengunduh file.');
+                } catch (error) {
+                    console.error('Error generating DOCX blob:', error);
+                    this.showToast('Gagal membuat file DOCX.', 'error');
+                    downloadBtn.textContent = 'Gagal';
+                }
             },
             downloadGeneratedDOCX() {
-                if (!this.state.currentDocxBlob) { this.showToast('Gagal mengunduh file. Coba buat pratinjau lagi.', 'error'); return; }
+                if (!this.state.currentDocxBlob) { this.showToast('File belum siap. Mohon tunggu.', 'error'); return; }
                 const quotation = this.saveQuotation(false);
                 const filename = `${quotation.number.replace(/\//g, '-')}.docx`;
                 const url = URL.createObjectURL(this.state.currentDocxBlob);
@@ -359,7 +375,23 @@
                 a.href = url; a.download = filename;
                 document.body.appendChild(a); a.click(); document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                document.getElementById('docx-preview-modal').classList.remove('active');
+            },
+            async imageToBase64(url) {
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`Network response was not ok, status: ${response.status}`);
+                    const blob = await response.blob();
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(blob);
+                    });
+                } catch (error) {
+                    console.error("Error converting image to base64:", error);
+                    this.showToast('Gagal memuat gambar untuk dokumen.', 'error');
+                    return null;
+                }
             },
             async buildDocxHtml(quotation) {
                 const marketingPerson = this.db.marketing.find(m => m.id == quotation.marketingId);
