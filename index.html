@@ -6,28 +6,12 @@
     <title>Quotation Generator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://unpkg.com/html-to-docx@1.8.0/dist/html-to-docx.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
         .modal { display: none; }
         .modal.active { display: flex; }
-        #pdf-preview-modal { position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8); }
-        #preview-container { padding: 2rem 0; }
-        .page { font-family: 'Arial', sans-serif !important; background-color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.4); width: 21cm; height: 29.7cm; margin: 0 auto 1.5rem auto; position: relative; overflow: hidden; page-break-after: always; }
-        .page:last-child { page-break-after: auto; }
-        .page-header-img { position: absolute; top: 0; left: 0; width: 100%; height: auto; }
-        .page-content-wrapper { position: absolute; top: 3.8cm; bottom: 2cm; left: 2.5cm; right: 2cm; font-size: 10pt !important; line-height: 1.4 !important; }
-        .page-content-inner table { width: 100%; border-collapse: collapse; font-size: 9pt; }
-        .page-content-inner th, .page-content-inner td { border: 1px solid #333; padding: 4px; vertical-align: top; }
-        .page-content-inner th { background-color: #e9e9e9; font-weight: bold; }
         #toast-notification.show { transform: translateY(0); opacity: 1; }
-        @media print {
-            body * { visibility: hidden; }
-            #preview-container, #preview-container * { visibility: visible; }
-            #preview-container { position: absolute; left: 0; top: 0; width: 100%; padding: 0; }
-            .page { margin: 0; box-shadow: none; border: none; }
-            #form-container, #header, #modal-controls { display: none; }
-        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -88,12 +72,18 @@
                         </div>
                         <div id="item-list" class="space-y-2"></div>
                         <div class="mt-4 flex justify-between items-center">
-                            <div class="flex items-center"><input type="checkbox" id="show-total" class="h-4 w-4 rounded border-gray-300 text-blue-600" checked><label for="show-total" class="ml-2 block text-sm text-gray-900">Tampilkan Total Harga di PDF?</label></div>
+                            <div class="flex items-center"><input type="checkbox" id="show-total" class="h-4 w-4 rounded border-gray-300 text-blue-600" checked><label for="show-total" class="ml-2 block text-sm text-gray-900">Tampilkan Total Harga?</label></div>
                             <p class="text-xl font-bold">Total: <span id="total-amount">Rp 0</span></p>
                         </div>
                     </fieldset>
                     <fieldset class="border p-4 rounded-lg">
                         <legend class="text-lg font-semibold px-2">Kondisi & Pembayaran</legend>
+                        <div class="flex flex-wrap items-center gap-4 mb-4 p-3 bg-gray-50 rounded-lg">
+                            <select id="condition-template-selector" class="block w-full md:w-auto flex-grow p-2 border border-gray-300 rounded-md shadow-sm"></select>
+                            <button type="button" onclick="app.loadConditionTemplate()" class="bg-sky-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-sky-700">Muat</button>
+                            <button type="button" onclick="app.showSaveConditionTemplateModal()" class="bg-purple-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-purple-700">Simpan Template</button>
+                            <button type="button" onclick="app.showConditionManager()" class="bg-gray-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-gray-700">Kelola</button>
+                        </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div><label for="conditions" class="block text-sm font-medium text-gray-700">Kondisi Penawaran</label><textarea id="conditions" rows="8" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"></textarea></div>
                             <div><label for="payment-method" class="block text-sm font-medium text-gray-700">Metode Pembayaran</label><textarea id="payment-method" rows="8" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm"></textarea></div>
@@ -101,15 +91,16 @@
                     </fieldset>
                     <div class="flex justify-end gap-4 pt-4">
                         <button type="button" onclick="app.saveQuotation()" class="bg-blue-600 text-white font-bold px-6 py-3 rounded-lg hover:bg-blue-700 shadow-sm">Simpan Penawaran</button>
-                        <button type="button" onclick="app.showPDFPreview()" class="bg-teal-600 text-white font-bold px-6 py-3 rounded-lg hover:bg-teal-700 shadow-sm">Pratinjau PDF</button>
+                        <button type="button" onclick="app.downloadDOCX()" class="bg-teal-600 text-white font-bold px-6 py-3 rounded-lg hover:bg-teal-700 shadow-sm">Unduh DOCX</button>
                     </div>
                 </form>
             </div>
         </div>
         
-        <div id="pdf-preview-modal" class="modal"><div class="fixed top-0 left-0 right-0 bg-white p-3 text-center z-20 shadow-lg" id="modal-controls"><button onclick="document.getElementById('pdf-preview-modal').classList.remove('active')" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg mr-4">Tutup Pratinjau</button><button onclick="app.downloadPDF()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Unduh PDF</button></div><div id="preview-container" class="w-full h-full"></div></div>
         <div id="custom-item-modal" class="modal fixed inset-0 bg-black bg-opacity-50 justify-center items-center p-4 z-50"><div class="bg-white rounded-lg shadow-xl w-full max-w-md flex flex-col"><div class="p-4 border-b"><h3 id="custom-item-title" class="text-xl font-semibold">Tambah Item Kustom</h3><input type="hidden" id="custom-item-id"></div><div class="p-4 space-y-4"><div><label for="custom-item-name" class="block text-sm font-medium">Nama Item</label><input type="text" id="custom-item-name" class="mt-1 w-full p-2 border rounded-md"></div><div><label for="custom-item-desc" class="block text-sm font-medium">Deskripsi</label><textarea id="custom-item-desc" rows="2" class="mt-1 w-full p-2 border rounded-md"></textarea></div><div class="grid grid-cols-2 gap-4"><div><label for="custom-item-unit" class="block text-sm font-medium">Satuan</label><input type="text" id="custom-item-unit" class="mt-1 w-full p-2 border rounded-md" placeholder="e.g., m², ls, roll"></div><div><label for="custom-item-price" class="block text-sm font-medium">Harga Satuan</label><input type="number" id="custom-item-price" class="mt-1 w-full p-2 border rounded-md" placeholder="e.g., 25000"></div></div></div><div class="p-4 bg-gray-50 flex justify-end gap-3"><button onclick="document.getElementById('custom-item-modal').classList.remove('active')" class="bg-gray-200 text-gray-800 font-semibold px-5 py-2 rounded-lg hover:bg-gray-300">Batal</button><button onclick="app.addOrUpdateCustomItem()" class="bg-blue-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-blue-700">Simpan Item</button></div></div></div>
         <div id="product-manager-modal" class="modal fixed inset-0 bg-black bg-opacity-50 justify-center items-center p-4 z-50"><div class="bg-white rounded-lg shadow-xl w-full max-w-lg flex flex-col"><div class="p-4 border-b flex justify-between items-center"><h3 class="text-xl font-semibold">Kelola Daftar Item</h3><button onclick="document.getElementById('product-manager-modal').classList.remove('active')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button></div><div id="product-manager-list" class="p-4 space-y-2 max-h-[60vh] overflow-y-auto"></div></div></div>
+        <div id="condition-manager-modal" class="modal fixed inset-0 bg-black bg-opacity-50 justify-center items-center p-4 z-50"><div class="bg-white rounded-lg shadow-xl w-full max-w-lg flex flex-col"><div class="p-4 border-b flex justify-between items-center"><h3 class="text-xl font-semibold">Kelola Template Kondisi</h3><button onclick="document.getElementById('condition-manager-modal').classList.remove('active')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button></div><div id="condition-manager-list" class="p-4 space-y-2 max-h-[60vh] overflow-y-auto"></div></div></div>
+        <div id="prompt-modal" class="modal fixed inset-0 bg-black bg-opacity-50 justify-center items-center p-4 z-50"><div class="bg-white rounded-lg shadow-xl w-full max-w-sm flex flex-col"><div class="p-4 border-b"><h3 id="prompt-title" class="text-xl font-semibold"></h3></div><div class="p-4"><label id="prompt-label" for="prompt-input" class="block text-sm font-medium text-gray-700 mb-2"></label><input type="text" id="prompt-input" class="w-full p-2 border border-gray-300 rounded-md shadow-sm"></div><div class="p-4 bg-gray-50 flex justify-end gap-3"><button id="prompt-cancel" class="bg-gray-200 text-gray-800 font-semibold px-5 py-2 rounded-lg hover:bg-gray-300">Batal</button><button id="prompt-ok" class="bg-blue-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-blue-700">OK</button></div></div></div>
         <div id="toast-notification" class="fixed bottom-5 right-5 bg-gray-800 text-white py-3 px-5 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300"><p id="toast-message"></p></div>
     </div>
 
@@ -128,10 +119,12 @@
                     { id: 3, name: 'Ir. Nuruzzaman', title: 'Technical & Marketing Manager', phone: '0811-877-022', signatureImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgODAiPjxzdHlsZT4uc3Ryb2tlIHtzdHJva2U6IzAwMDtmaWxsOm5vbmU7c3Ryb2tlLXdpZHRoOjI7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO308L3N0eWxlPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik0xNSw1MEMyMCwzMCw0MCwxMCw2MCwyMGMxOCw4LDM4LTUsNDgtNWMxMiwwLDM1LDE1LDQ1LDQwIEMxODAsNTUsMTg1LDMwLDE5MCw0NCIvPjwvc3ZnPg==' },
                     { id: 4, name: 'Ir. Astri Juwita P.', title: 'Design & Product Manager', phone: '+62-812-9876-5432', signatureImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgODAiPjxzdHlsZT4uc3Ryb2tlIHtzdHJva2U6IzAwMDtmaWxsOm5vbmU7c3Ryb2tlLXdpZHRoOjI7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO308L3N0eWxlPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik0xMCw1NUMyNSwzNSw0NSwxNSw2NSwyMmMxOCw2LDQwLTgsNTAtMTBjMTUsLTMsMjUsMTgsMzUsNDIgQzE4MCw1MCwxODIsMzIsMTkwLDQxIi8+PC9zdmc+' }
                 ],
-                defaultConditions: `• Harga Material Locco Gudang Multibangun di Bitung, Tangerang.\n• Harga Material dan Instalasi belum termasuk PPN 11%.\n• Harga Instalasi tidak termasuk genset 10 kVA & dewatering pump.\n• Harga Instalasi tidak termasuk persiapan lahan dan pekerjaan tanah seperti penggalian, penimbunan dan pembuatan angkur.\n• Harga Instalasi tidak termasuk Unskilled labor (kuli gelar) dan besi angkur.\n• Harga Instalasi tidak termasuk peralatan tambahan seperti plat strip, baut, dll bila diperlukan.\n• Harga Instalasi tidak termasuk biaya langsir Material.\n• Harga Instalasi sudah termasuk akomodasi, transportasi, penginapan dan tes kesehatan untuk installer.\n• Harga Instalasi dengan asumsi pekerjaan dilakukan bukan pada musim hujan.`,
-                defaultPaymentMethod: `• Material: Cash in Advance.\n• Instalasi: DP 50%, sisa pelunasan sesuai dengan prosentase progress pekerjaan secara bertahap.\n• Pengambilan Material setelah Purchase Order dan pembayaran diterima.\n• Material Ready Stock.`
+                initialConditions: [
+                    { id: 1, name: 'Material', conditions: `• Harga Material Locco Gudang Multibangun di Bitung, Tangerang.\n• Harga Material belum termasuk PPN 11%.\n• Pembayaran: Cash in Advance.\n• Pengambilan Material setelah Purchase Order dan pembayaran diterima.\n• Material Ready Stock.`, paymentMethod: `• Pembayaran: Cash in Advance.` },
+                    { id: 2, name: 'Material + Instalasi HDPE Geomembrane', conditions: `• Harga Material Locco Gudang Multibangun di Bitung, Tangerang.\n• Harga Material dan Instalasi belum termasuk PPN 11%.\n• Harga Instalasi tidak termasuk genset 10 kVA & dewatering pump.\n• Harga Instalasi tidak termasuk persiapan lahan dan pekerjaan tanah seperti penggalian, penimbunan dan pembuatan angkur.\n• Harga Instalasi tidak termasuk Unskilled labor (kuli gelar) dan besi angkur.\n• Harga Instalasi tidak termasuk peralatan tambahan seperti plat strip, baut, dll bila diperlukan.\n• Harga Instalasi tidak termasuk biaya langsir Material.\n• Harga Instalasi sudah termasuk akomodasi, transportasi, penginapan dan tes kesehatan untuk installer.\n• Harga Instalasi dengan asumsi pekerjaan dilakukan bukan pada musim hujan.`, paymentMethod: `• Material: Cash in Advance.\n• Instalasi: DP 50%, sisa pelunasan sesuai dengan prosentase progress pekerjaan secara bertahap.\n• Pengambilan Material setelah Purchase Order dan pembayaran diterima.`}
+                ]
             },
-            state: { quotations: [], products: [], currentQuotationItems: [] },
+            state: { quotations: [], products: [], conditionTemplates: [], currentQuotationItems: [] },
             init() { this.loadFromLocalStorage(); this.populateDropdowns(); this.renderQuotationList(); this.showList(); },
             showList() { document.getElementById('main-view').classList.remove('hidden'); document.getElementById('form-view').classList.add('hidden'); this.renderQuotationList(); },
             showForm(id = null) {
@@ -150,6 +143,7 @@
                         document.getElementById('project-name').value = q.projectName;
                         document.getElementById('quotation-date').value = q.date;
                         document.getElementById('quotation-number-manual').value = q.number.split('/')[0];
+                        this.updateQuotationNumber();
                         document.getElementById('valid-until-date').value = q.validUntil;
                         document.getElementById('conditions').value = q.conditions;
                         document.getElementById('payment-method').value = q.paymentMethod;
@@ -163,12 +157,10 @@
                     today.setDate(today.getDate() + 14);
                     document.getElementById('valid-until-date').value = today.toISOString().split('T')[0];
                     this.updateQuotationNumber(true);
-                    document.getElementById('conditions').value = this.db.defaultConditions;
-                    document.getElementById('payment-method').value = this.db.defaultPaymentMethod;
                 }
                 this.renderItems();
             },
-            resetForm() { document.getElementById('quotation-form').reset(); document.getElementById('quotation-id').value = ''; this.state.currentQuotationItems = []; this.renderItems(); },
+            resetForm() { document.getElementById('quotation-form').reset(); document.getElementById('quotation-id').value = ''; this.state.currentQuotationItems = []; this.renderItems(); document.getElementById('show-total').checked = true;},
             populateDropdowns() {
                 const productSelect = document.getElementById('product-selector');
                 productSelect.innerHTML = '<option value="">-- Pilih Item dari Daftar --</option>';
@@ -176,6 +168,7 @@
                 const marketingSelect = document.getElementById('marketing-id');
                 marketingSelect.innerHTML = '<option value="">-- Pilih Marketing --</option>';
                 this.db.marketing.forEach(m => marketingSelect.innerHTML += `<option value="${m.id}">${m.name}</option>`);
+                this.populateConditionTemplateDropdown();
             },
             renderQuotationList() {
                 const listEl = document.getElementById('quotation-list');
@@ -260,13 +253,30 @@
                 listEl.innerHTML = this.state.products.map(p => `<div class="flex justify-between items-center p-2 border rounded-md"><span>${p.name}</span><div><button onclick="app.showCustomItemModal(${p.id})" class="text-sm text-blue-600 hover:underline mr-2">Edit</button><button onclick="app.deleteProduct(${p.id})" class="text-sm text-red-600 hover:underline">Hapus</button></div></div>`).join('');
             },
             deleteProduct(id) { if (confirm('Yakin ingin menghapus item ini dari daftar?')) { this.state.products = this.state.products.filter(p => p.id !== id); this.saveToLocalStorage(); this.populateDropdowns(); this.renderProductManager(); this.showToast('Item dihapus dari daftar.'); } },
+            populateConditionTemplateDropdown() { const sel = document.getElementById('condition-template-selector'); sel.innerHTML = '<option value="">-- Pilih Template Kondisi --</option>'; this.state.conditionTemplates.forEach(t => sel.innerHTML += `<option value="${t.id}">${t.name}</option>`); },
+            loadConditionTemplate() { const id = document.getElementById('condition-template-selector').value; if(!id) return; const t = this.state.conditionTemplates.find(t => t.id == id); if(t) { document.getElementById('conditions').value = t.conditions; document.getElementById('payment-method').value = t.paymentMethod; this.showToast(`Template "${t.name}" dimuat.`); } },
+            showSaveConditionTemplateModal() {
+                this.showPrompt('Simpan Template Kondisi Baru', 'Nama Template', '', (name) => {
+                    if (name) {
+                        this.state.conditionTemplates.push({ id: Date.now(), name, conditions: document.getElementById('conditions').value, paymentMethod: document.getElementById('payment-method').value });
+                        this.saveToLocalStorage();
+                        this.populateConditionTemplateDropdown();
+                        this.showToast(`Template "${name}" disimpan.`);
+                    }
+                });
+            },
+            showConditionManager() { this.renderConditionManager(); document.getElementById('condition-manager-modal').classList.add('active'); },
+            renderConditionManager() { const listEl = document.getElementById('condition-manager-list'); listEl.innerHTML = this.state.conditionTemplates.map(t => `<div class="flex justify-between items-center p-2 border rounded-md"><span>${t.name}</span><div><button onclick="app.deleteConditionTemplate(${t.id})" class="text-sm text-red-600 hover:underline">Hapus</button></div></div>`).join(''); },
+            deleteConditionTemplate(id) { if (confirm('Yakin ingin menghapus template kondisi ini?')) { this.state.conditionTemplates = this.state.conditionTemplates.filter(t => t.id !== id); this.saveToLocalStorage(); this.populateConditionTemplateDropdown(); this.renderConditionManager(); this.showToast('Template kondisi dihapus.'); } },
             updateQuotationNumber(isNew = false) {
-                const date = new Date(document.getElementById('quotation-date').value + 'T00:00:00');
+                const dateStr = document.getElementById('quotation-date').value;
+                if(!dateStr) return;
+                const date = new Date(dateStr + 'T00:00:00');
                 const year = date.getFullYear();
                 const month = date.getMonth() + 1;
                 document.getElementById('quotation-number-auto').textContent = `/MRP/PWRN/${this.toRoman(month)}/${year}`;
                 if (isNew) {
-                    const lastNumber = this.state.quotations.length > 0 ? Math.max(...this.state.quotations.map(q => parseInt(q.number.split('/')[0]))) : 227;
+                    const lastNumber = this.state.quotations.length > 0 ? Math.max(0, ...this.state.quotations.map(q => parseInt(q.number.split('/')[0]))) : 227;
                     document.getElementById('quotation-number-manual').value = lastNumber + 1;
                 }
             },
@@ -275,8 +285,8 @@
             formatCurrencyForInput: (value) => (value === null || value === undefined) ? '' : new Intl.NumberFormat('id-ID').format(value),
             unformatCurrency: (value) => parseFloat(String(value).replace(/[^0-9]/g, '')) || 0,
             formatDate(dStr) { if (!dStr) return ''; const d = new Date(dStr + 'T00:00:00'); return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(d); },
-            saveToLocalStorage() { localStorage.setItem('quotationAppData', JSON.stringify({ quotations: this.state.quotations, products: this.state.products })); },
-            loadFromLocalStorage() { const d = localStorage.getItem('quotationAppData'); if (d) { const p = JSON.parse(d); this.state.quotations = p.quotations || []; this.state.products = p.products || [...this.db.initialProducts]; } else { this.state.products = [...this.db.initialProducts]; } },
+            saveToLocalStorage() { localStorage.setItem('quotationAppData', JSON.stringify({ quotations: this.state.quotations, products: this.state.products, conditionTemplates: this.state.conditionTemplates })); },
+            loadFromLocalStorage() { const d = localStorage.getItem('quotationAppData'); if (d) { const p = JSON.parse(d); this.state.quotations = p.quotations || []; this.state.products = p.products || [...this.db.initialProducts]; this.state.conditionTemplates = p.conditionTemplates || [...this.db.initialConditions]; } else { this.state.products = [...this.db.initialProducts]; this.state.conditionTemplates = [...this.db.initialConditions]; } },
             showToast(message, type = 'success') {
                 const toast = document.getElementById('toast-notification');
                 const messageEl = document.getElementById('toast-message');
@@ -286,45 +296,139 @@
                 toast.classList.add('show');
                 setTimeout(() => { toast.classList.remove('show'); }, 3000);
             },
-            showPDFPreview() { const q = this.saveQuotation(false); if (q) { this.generateAndPaginateContent(q); document.getElementById('pdf-preview-modal').classList.add('active'); } },
-            createNewPage() { const page = document.createElement('div'); page.className = 'page'; page.innerHTML = `<img class="page-header-img" src="https://raw.githack.com/krisandi89/penawaranmrp/main/kop%20surat%20multibangun.png" alt="Kop Surat"><div class="page-content-wrapper"><div class="page-content-inner"></div></div>`; document.getElementById('preview-container').appendChild(page); return page.querySelector('.page-content-inner'); },
-            generateAndPaginateContent(quotation) {
-                const previewContainer = document.getElementById('preview-container');
-                previewContainer.innerHTML = '';
-                let currentContentContainer = this.createNewPage();
-                const allContentElements = this.buildAllContentElements(quotation);
-                for (const el of allContentElements) {
-                    currentContentContainer.appendChild(el);
-                    if (currentContentContainer.parentElement.parentElement.scrollHeight > currentContentContainer.parentElement.parentElement.offsetHeight) {
-                        el.remove();
-                        currentContentContainer = this.createNewPage();
-                        currentContentContainer.appendChild(el);
-                        if (el.tagName === 'TABLE') { const header = el.querySelector('thead'); if(header) { const newTable = currentContentContainer.querySelector('table'); if(newTable) newTable.prepend(header.cloneNode(true)); } }
+            showPrompt(title, label, defaultValue, callback) {
+                document.getElementById('prompt-title').textContent = title;
+                document.getElementById('prompt-label').textContent = label;
+                const input = document.getElementById('prompt-input');
+                input.value = defaultValue;
+                document.getElementById('prompt-modal').classList.add('active');
+                const okBtn = document.getElementById('prompt-ok');
+                const cancelBtn = document.getElementById('prompt-cancel');
+                
+                const close = () => {
+                    document.getElementById('prompt-modal').classList.remove('active');
+                    okBtn.replaceWith(okBtn.cloneNode(true));
+                    cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+                };
+                
+                okBtn.addEventListener('click', () => {
+                    if (input.value.trim()){
+                        callback(input.value.trim());
+                        close();
+                    } else {
+                        this.showToast('Nama tidak boleh kosong.', 'error');
                     }
+                });
+                cancelBtn.addEventListener('click', () => {
+                    callback(null);
+                    close();
+                });
+            },
+            async imageToBase64(url) {
+                try {
+                    const response = await fetch(url);
+                    const blob = await response.blob();
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(blob);
+                    });
+                } catch (error) {
+                    console.error("Error converting image to base64:", error);
+                    return null;
                 }
             },
-            buildAllContentElements(quotation) {
-                const fragment = document.createDocumentFragment();
-                const customer = quotation.customer;
+            async downloadDOCX() {
+                const quotation = this.saveQuotation(false);
+                if (!quotation) return;
+
                 const marketingPerson = this.db.marketing.find(m => m.id == quotation.marketingId);
-                const headerContainer = document.createElement('div');
-                headerContainer.style.cssText = 'display: flex; justify-content: space-between; align-items: flex-end;';
-                headerContainer.innerHTML = `<div>No. <span style="font-weight: bold;">${quotation.number}</span></div><div>Jakarta, ${this.formatDate(quotation.date)}</div>`;
-                fragment.appendChild(headerContainer);
-                const clientSection = document.createElement('section'); clientSection.style.marginTop = '1.5rem'; clientSection.innerHTML = `<p>Kepada Yth.:</p><p style="font-weight: bold; text-transform: uppercase;">${customer.name}</p><div style="white-space: pre-wrap;">${customer.address}</div><br><p>Telepon: <span style="font-weight: 600;">${customer.phone}</span></p>`; fragment.appendChild(clientSection);
-                const subjectSection = document.createElement('section'); subjectSection.style.cssText = 'margin: 1.5rem 0;'; subjectSection.innerHTML = `<p style="font-weight: bold; text-decoration: underline;">Perihal: <span>Penawaran Harga</span></p><p>Proyek: <span>${quotation.projectName}</span></p>`; fragment.appendChild(subjectSection);
-                const openingSection = document.createElement('section'); openingSection.style.marginBottom = '1rem'; openingSection.innerHTML = `<p>Dengan hormat,</p><p>Menindaklanjuti permohonan penawaran harga resmi kami untuk proyek tersebut, maka bersama ini saya kirimkan harga produk kami sebagai berikut:</p>`; fragment.appendChild(openingSection);
-                const table = document.createElement('table'); let tableHTML = `<thead><tr><th style="width: 45%;">Material</th><th>Volume</th><th>Harga</th><th>Jumlah Harga</th></tr></thead><tbody>`;
-                quotation.items.forEach(item => { const desc = item.description.replace(/Merk:/g, '<span style="font-weight:bold">Merk:</span>'); tableHTML += `<tr><td><div style="font-weight: bold;">${item.name}</div><div style="font-size: 8pt; white-space: pre-wrap; line-height: 1.2;">${desc}</div></td><td style="text-align: center;">${this.formatCurrencyForInput(item.volume)} ${item.unit}</td><td style="text-align: right;">${this.formatCurrency(item.price)}</td><td style="text-align: right;">${this.formatCurrency(item.total)}</td></tr>`; });
-                if (quotation.showTotal) { tableHTML += `<tr><td colspan="3" style="text-align: right; font-weight: bold;">Total</td><td style="text-align: right; font-weight: bold;">${this.formatCurrency(quotation.total)}</td></tr>`; }
-                table.innerHTML = tableHTML + '</tbody>'; fragment.appendChild(table);
-                const createSection = (title, content) => { const s = document.createElement('section'); s.style.marginTop = '1rem'; s.innerHTML = `<h4 style="font-weight: bold;">${title}</h4><div style="padding-left: 1rem; white-space: pre-wrap; font-size: 9pt;">${content}</div>`; return s; };
-                fragment.appendChild(createSection('Kondisi Penawaran :', quotation.conditions)); fragment.appendChild(createSection('Metode Pembayaran :', quotation.paymentMethod));
-                const closingSection = document.createElement('section'); closingSection.style.marginTop = '1rem'; closingSection.innerHTML = `<p>Penawaran harga ini berlaku sampai dengan tanggal <span style="font-weight: bold;">${this.formatDate(quotation.validUntil)}</span>.</p><br><p>Demikian penawaran harga ini kami sampaikan. Atas perhatian dan kerjasamanya kami ucapkan terima kasih.</p>`; fragment.appendChild(closingSection);
-                if (marketingPerson) { const sigSection = document.createElement('footer'); sigSection.style.marginTop = '1.5rem'; sigSection.innerHTML = `<p>Hormat kami,</p><div style="height: 5rem; position: relative;"><img src="${marketingPerson.signatureImg}" alt="Tanda Tangan" style="height: 5rem;"></div><p style="font-weight: bold;">${marketingPerson.name}</p><p style="font-style: italic;">${marketingPerson.title}</p><p>${marketingPerson.phone}</p>`; fragment.appendChild(sigSection); }
-                return Array.from(fragment.children);
-            },
-            downloadPDF() { const el = document.getElementById('preview-container'); const q = this.saveQuotation(false); const opt = { margin: [1, 0, 1, 0], filename: `${q.number.replace(/\//g, '-')}.pdf`, image: { type: 'jpeg', quality: 1.0 }, html2canvas: { scale: 3, useCORS: true, letterRendering: true }, jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' } }; html2pdf().from(el).set(opt).save(); }
+                const headerImageBase64 = await this.imageToBase64('https://raw.githack.com/krisandi89/penawaranmrp/main/kop%20surat%20multibangun.png');
+                
+                let tableHTML = `<table style="width: 100%; border-collapse: collapse; font-size: 9pt;"><thead><tr>
+                    <th style="width: 45%; border: 1px solid #333; padding: 4px; background-color: #e9e9e9;">Material</th>
+                    <th style="border: 1px solid #333; padding: 4px; background-color: #e9e9e9;">Volume</th>
+                    <th style="border: 1px solid #333; padding: 4px; background-color: #e9e9e9;">Harga</th>
+                    <th style="border: 1px solid #333; padding: 4px; background-color: #e9e9e9;">Jumlah Harga</th>
+                </tr></thead><tbody>`;
+                quotation.items.forEach(item => {
+                    const desc = item.description.replace(/\n/g, '<br/>').replace(/Merk:/g, '<b>Merk:</b>');
+                    tableHTML += `<tr>
+                        <td style="border: 1px solid #333; padding: 4px;"><b>${item.name}</b><br/><p style="font-size: 8pt; line-height: 1.2;">${desc}</p></td>
+                        <td style="border: 1px solid #333; padding: 4px; text-align: center;">${this.formatCurrencyForInput(item.volume)} ${item.unit}</td>
+                        <td style="border: 1px solid #333; padding: 4px; text-align: right;">${this.formatCurrency(item.price)}</td>
+                        <td style="border: 1px solid #333; padding: 4px; text-align: right;">${this.formatCurrency(item.total)}</td>
+                    </tr>`;
+                });
+                if (quotation.showTotal) {
+                    tableHTML += `<tr><td colspan="3" style="border: 1px solid #333; padding: 4px; text-align: right;"><b>Total</b></td><td style="border: 1px solid #333; padding: 4px; text-align: right;"><b>${this.formatCurrency(quotation.total)}</b></td></tr>`;
+                }
+                tableHTML += '</tbody></table>';
+
+                const signatureImageBase64 = marketingPerson ? await this.imageToBase64(marketingPerson.signatureImg) : '';
+
+                const contentHtml = `
+                    <!DOCTYPE html><html><head><style>body { font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4; } p, div, h4 { margin: 0; padding: 0; } </style></head>
+                    <body>
+                        ${headerImageBase64 ? `<p><img src="${headerImageBase64}" width="600" /></p>` : ''}
+                        <div style="display: table; width: 100%; margin-top: -2.8cm;">
+                            <div style="display: table-cell; text-align: left;">No. <b>${quotation.number}</b></div>
+                            <div style="display: table-cell; text-align: right;">Jakarta, ${this.formatDate(quotation.date)}</div>
+                        </div>
+                        <br/><br/>
+                        <div>
+                            <p>Kepada Yth.:</p>
+                            <p><b>${quotation.customer.name.toUpperCase()}</b></p>
+                            <p style="white-space: pre-wrap;">${quotation.customer.address}</p><br/>
+                            <p>Telepon: <b>${quotation.customer.phone}</b></p>
+                        </div>
+                        <br/><br/>
+                        <div>
+                            <p><u><b>Perihal: Penawaran Harga</b></u></p>
+                            <p>Proyek: ${quotation.projectName}</p>
+                        </div>
+                        <br/><br/>
+                        <p>Dengan hormat,</p>
+                        <p>Menindaklanjuti permohonan penawaran harga resmi kami untuk proyek tersebut, maka bersama ini saya kirimkan harga produk kami sebagai berikut:</p>
+                        <br/>
+                        ${tableHTML}
+                        <br/>
+                        <div>
+                            <h4><b>Kondisi Penawaran :</b></h4>
+                            <div style="padding-left: 1rem; white-space: pre-wrap; font-size: 9pt;">${quotation.conditions.replace(/\n/g, '<br/>')}</div>
+                        </div>
+                        <br/>
+                        <div>
+                            <h4><b>Metode Pembayaran :</b></h4>
+                            <div style="padding-left: 1rem; white-space: pre-wrap; font-size: 9pt;">${quotation.paymentMethod.replace(/\n/g, '<br/>')}</div>
+                        </div>
+                        <br/>
+                        <p>Penawaran harga ini berlaku sampai dengan tanggal <b>${this.formatDate(quotation.validUntil)}</b>.</p><br/>
+                        <p>Demikian penawaran harga ini kami sampaikan. Atas perhatian dan kerjasamanya kami ucapkan terima kasih.</p>
+                        <br/><br/>
+                        ${marketingPerson ? `
+                        <div>
+                            <p>Hormat kami,</p>
+                            ${signatureImageBase64 ? `<p><img src="${signatureImageBase64}" width="150" height="75" /></p>` : '<br/><br/><br/>'}
+                            <p><b>${marketingPerson.name}</b></p>
+                            <p><i>${marketingPerson.title}</i></p>
+                            <p>${marketingPerson.phone}</p>
+                        </div>
+                        `: ''}
+                    </body></html>
+                `;
+
+                const fileBuffer = await htmlToDocx.asBlob(contentHtml);
+                const url = URL.createObjectURL(fileBuffer);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `${quotation.number.replace(/\//g, '-')}.docx`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
         };
         document.addEventListener('DOMContentLoaded', () => { app.init(); });
     </script>
