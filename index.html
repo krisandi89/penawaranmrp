@@ -91,12 +91,27 @@
                     </fieldset>
                     <div class="flex justify-end gap-4 pt-4">
                         <button type="button" onclick="app.saveQuotation()" class="bg-blue-600 text-white font-bold px-6 py-3 rounded-lg hover:bg-blue-700 shadow-sm">Simpan Penawaran</button>
-                        <button type="button" onclick="app.downloadDOCX()" class="bg-teal-600 text-white font-bold px-6 py-3 rounded-lg hover:bg-teal-700 shadow-sm">Unduh DOCX</button>
+                        <button type="button" onclick="app.showDOCXPreview()" class="bg-teal-600 text-white font-bold px-6 py-3 rounded-lg hover:bg-teal-700 shadow-sm">Pratinjau & Unduh DOCX</button>
                     </div>
                 </form>
             </div>
         </div>
         
+        <div id="docx-preview-modal" class="modal fixed inset-0 bg-black bg-opacity-70 justify-center items-center p-4 z-50">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl h-full max-h-[90vh] flex flex-col">
+                <div class="p-4 border-b flex justify-between items-center bg-gray-50">
+                    <h3 class="text-xl font-semibold">Pratinjau Dokumen</h3>
+                    <div>
+                        <button onclick="app.downloadGeneratedDOCX()" class="bg-teal-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-teal-700 shadow-sm mr-2">Unduh DOCX</button>
+                        <button onclick="document.getElementById('docx-preview-modal').classList.remove('active')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+                    </div>
+                </div>
+                <div class="p-4 flex-grow overflow-auto bg-gray-200">
+                    <iframe id="docx-preview-iframe" class="w-full h-full border-none shadow-inner bg-white"></iframe>
+                </div>
+            </div>
+        </div>
+
         <div id="custom-item-modal" class="modal fixed inset-0 bg-black bg-opacity-50 justify-center items-center p-4 z-50"><div class="bg-white rounded-lg shadow-xl w-full max-w-md flex flex-col"><div class="p-4 border-b"><h3 id="custom-item-title" class="text-xl font-semibold">Tambah Item Kustom</h3><input type="hidden" id="custom-item-id"></div><div class="p-4 space-y-4"><div><label for="custom-item-name" class="block text-sm font-medium">Nama Item</label><input type="text" id="custom-item-name" class="mt-1 w-full p-2 border rounded-md"></div><div><label for="custom-item-desc" class="block text-sm font-medium">Deskripsi</label><textarea id="custom-item-desc" rows="2" class="mt-1 w-full p-2 border rounded-md"></textarea></div><div class="grid grid-cols-2 gap-4"><div><label for="custom-item-unit" class="block text-sm font-medium">Satuan</label><input type="text" id="custom-item-unit" class="mt-1 w-full p-2 border rounded-md" placeholder="e.g., m², ls, roll"></div><div><label for="custom-item-price" class="block text-sm font-medium">Harga Satuan</label><input type="number" id="custom-item-price" class="mt-1 w-full p-2 border rounded-md" placeholder="e.g., 25000"></div></div></div><div class="p-4 bg-gray-50 flex justify-end gap-3"><button onclick="document.getElementById('custom-item-modal').classList.remove('active')" class="bg-gray-200 text-gray-800 font-semibold px-5 py-2 rounded-lg hover:bg-gray-300">Batal</button><button onclick="app.addOrUpdateCustomItem()" class="bg-blue-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-blue-700">Simpan Item</button></div></div></div>
         <div id="product-manager-modal" class="modal fixed inset-0 bg-black bg-opacity-50 justify-center items-center p-4 z-50"><div class="bg-white rounded-lg shadow-xl w-full max-w-lg flex flex-col"><div class="p-4 border-b flex justify-between items-center"><h3 class="text-xl font-semibold">Kelola Daftar Item</h3><button onclick="document.getElementById('product-manager-modal').classList.remove('active')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button></div><div id="product-manager-list" class="p-4 space-y-2 max-h-[60vh] overflow-y-auto"></div></div></div>
         <div id="condition-manager-modal" class="modal fixed inset-0 bg-black bg-opacity-50 justify-center items-center p-4 z-50"><div class="bg-white rounded-lg shadow-xl w-full max-w-lg flex flex-col"><div class="p-4 border-b flex justify-between items-center"><h3 class="text-xl font-semibold">Kelola Template Kondisi</h3><button onclick="document.getElementById('condition-manager-modal').classList.remove('active')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button></div><div id="condition-manager-list" class="p-4 space-y-2 max-h-[60vh] overflow-y-auto"></div></div></div>
@@ -124,7 +139,7 @@
                     { id: 2, name: 'Material + Instalasi HDPE Geomembrane', conditions: `• Harga Material Locco Gudang Multibangun di Bitung, Tangerang.\n• Harga Material dan Instalasi belum termasuk PPN 11%.\n• Harga Instalasi tidak termasuk genset 10 kVA & dewatering pump.\n• Harga Instalasi tidak termasuk persiapan lahan dan pekerjaan tanah seperti penggalian, penimbunan dan pembuatan angkur.\n• Harga Instalasi tidak termasuk Unskilled labor (kuli gelar) dan besi angkur.\n• Harga Instalasi tidak termasuk peralatan tambahan seperti plat strip, baut, dll bila diperlukan.\n• Harga Instalasi tidak termasuk biaya langsir Material.\n• Harga Instalasi sudah termasuk akomodasi, transportasi, penginapan dan tes kesehatan untuk installer.\n• Harga Instalasi dengan asumsi pekerjaan dilakukan bukan pada musim hujan.`, paymentMethod: `• Material: Cash in Advance.\n• Instalasi: DP 50%, sisa pelunasan sesuai dengan prosentase progress pekerjaan secara bertahap.\n• Pengambilan Material setelah Purchase Order dan pembayaran diterima.`}
                 ]
             },
-            state: { quotations: [], products: [], conditionTemplates: [], currentQuotationItems: [] },
+            state: { quotations: [], products: [], conditionTemplates: [], currentQuotationItems: [], currentDocxBlob: null },
             init() { this.loadFromLocalStorage(); this.populateDropdowns(); this.renderQuotationList(); this.showList(); },
             showList() { document.getElementById('main-view').classList.remove('hidden'); document.getElementById('form-view').classList.add('hidden'); this.renderQuotationList(); },
             showForm(id = null) {
@@ -324,38 +339,42 @@
                     close();
                 });
             },
-            async imageToBase64(url) {
-                try {
-                    const response = await fetch(url);
-                    const blob = await response.blob();
-                    return new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result);
-                        reader.onerror = reject;
-                        reader.readAsDataURL(blob);
-                    });
-                } catch (error) {
-                    console.error("Error converting image to base64:", error);
-                    return null;
-                }
-            },
-            async downloadDOCX() {
+            async showDOCXPreview() {
                 const quotation = this.saveQuotation(false);
                 if (!quotation) return;
-
+                this.showToast('Mempersiapkan pratinjau...');
+                const contentHtml = await this.buildDocxHtml(quotation);
+                const fileBuffer = await htmlToDocx.asBlob(contentHtml);
+                this.state.currentDocxBlob = fileBuffer;
+                const iframe = document.getElementById('docx-preview-iframe');
+                iframe.srcdoc = contentHtml;
+                document.getElementById('docx-preview-modal').classList.add('active');
+            },
+            downloadGeneratedDOCX() {
+                if (!this.state.currentDocxBlob) { this.showToast('Gagal mengunduh file. Coba buat pratinjau lagi.', 'error'); return; }
+                const quotation = this.saveQuotation(false);
+                const filename = `${quotation.number.replace(/\//g, '-')}.docx`;
+                const url = URL.createObjectURL(this.state.currentDocxBlob);
+                const a = document.createElement("a");
+                a.href = url; a.download = filename;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                document.getElementById('docx-preview-modal').classList.remove('active');
+            },
+            async buildDocxHtml(quotation) {
                 const marketingPerson = this.db.marketing.find(m => m.id == quotation.marketingId);
                 const headerImageBase64 = await this.imageToBase64('https://raw.githack.com/krisandi89/penawaranmrp/main/kop%20surat%20multibangun.png');
                 
                 let tableHTML = `<table style="width: 100%; border-collapse: collapse; font-size: 9pt;"><thead><tr>
-                    <th style="width: 45%; border: 1px solid #333; padding: 4px; background-color: #e9e9e9;">Material</th>
-                    <th style="border: 1px solid #333; padding: 4px; background-color: #e9e9e9;">Volume</th>
-                    <th style="border: 1px solid #333; padding: 4px; background-color: #e9e9e9;">Harga</th>
-                    <th style="border: 1px solid #333; padding: 4px; background-color: #e9e9e9;">Jumlah Harga</th>
+                    <th style="width: 45%; border: 1px solid #333; padding: 4px; background-color: #e9e9e9; text-align: left;">Material</th>
+                    <th style="border: 1px solid #333; padding: 4px; background-color: #e9e9e9; text-align: center;">Volume</th>
+                    <th style="border: 1px solid #333; padding: 4px; background-color: #e9e9e9; text-align: right;">Harga</th>
+                    <th style="border: 1px solid #333; padding: 4px; background-color: #e9e9e9; text-align: right;">Jumlah Harga</th>
                 </tr></thead><tbody>`;
                 quotation.items.forEach(item => {
                     const desc = item.description.replace(/\n/g, '<br/>').replace(/Merk:/g, '<b>Merk:</b>');
                     tableHTML += `<tr>
-                        <td style="border: 1px solid #333; padding: 4px;"><b>${item.name}</b><br/><p style="font-size: 8pt; line-height: 1.2;">${desc}</p></td>
+                        <td style="border: 1px solid #333; padding: 4px;"><b>${item.name}</b><br/><div style="font-size: 8pt; line-height: 1.2;">${desc}</div></td>
                         <td style="border: 1px solid #333; padding: 4px; text-align: center;">${this.formatCurrencyForInput(item.volume)} ${item.unit}</td>
                         <td style="border: 1px solid #333; padding: 4px; text-align: right;">${this.formatCurrency(item.price)}</td>
                         <td style="border: 1px solid #333; padding: 4px; text-align: right;">${this.formatCurrency(item.total)}</td>
@@ -368,67 +387,61 @@
 
                 const signatureImageBase64 = marketingPerson ? await this.imageToBase64(marketingPerson.signatureImg) : '';
 
-                const contentHtml = `
+                return `
                     <!DOCTYPE html><html><head><style>body { font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4; } p, div, h4 { margin: 0; padding: 0; } </style></head>
                     <body>
-                        ${headerImageBase64 ? `<p><img src="${headerImageBase64}" width="600" /></p>` : ''}
-                        <div style="display: table; width: 100%; margin-top: -2.8cm;">
-                            <div style="display: table-cell; text-align: left;">No. <b>${quotation.number}</b></div>
-                            <div style="display: table-cell; text-align: right;">Jakarta, ${this.formatDate(quotation.date)}</div>
+                        ${headerImageBase64 ? `<div style="text-align:center;"><img src="${headerImageBase64}" style="width:100%; max-width:650px;" /></div>` : ''}
+                        <div style="margin-top: -2.8cm; padding: 0 1cm;">
+                            <table style="width: 100%; border: none;">
+                                <tr>
+                                    <td style="text-align: left;">No. <b>${quotation.number}</b></td>
+                                    <td style="text-align: right;">Jakarta, ${this.formatDate(quotation.date)}</td>
+                                </tr>
+                            </table>
+                            <br/><br/>
+                            <div>
+                                <p>Kepada Yth.:</p>
+                                <p><b>${quotation.customer.name.toUpperCase()}</b></p>
+                                <p style="white-space: pre-wrap;">${quotation.customer.address}</p><br/>
+                                <p>Telepon: <b>${quotation.customer.phone}</b></p>
+                            </div>
+                            <br/><br/>
+                            <div>
+                                <p><u><b>Perihal: Penawaran Harga</b></u></p>
+                                <p>Proyek: ${quotation.projectName}</p>
+                            </div>
+                            <br/><br/>
+                            <p>Dengan hormat,</p>
+                            <p>Menindaklanjuti permohonan penawaran harga resmi kami untuk proyek tersebut, maka bersama ini saya kirimkan harga produk kami sebagai berikut:</p>
+                            <br/>
+                            ${tableHTML}
+                            <br/>
+                            <div>
+                                <h4><b>Kondisi Penawaran :</b></h4>
+                                <div style="padding-left: 1rem; white-space: pre-wrap; font-size: 9pt;">${quotation.conditions.replace(/\n/g, '<br/>')}</div>
+                            </div>
+                            <br/>
+                            <div>
+                                <h4><b>Metode Pembayaran :</b></h4>
+                                <div style="padding-left: 1rem; white-space: pre-wrap; font-size: 9pt;">${quotation.paymentMethod.replace(/\n/g, '<br/>')}</div>
+                            </div>
+                            <br/>
+                            <p>Penawaran harga ini berlaku sampai dengan tanggal <b>${this.formatDate(quotation.validUntil)}</b>.</p><br/>
+                            <p>Demikian penawaran harga ini kami sampaikan. Atas perhatian dan kerjasamanya kami ucapkan terima kasih.</p>
+                            <br/><br/>
+                            ${marketingPerson ? `
+                            <div>
+                                <p>Hormat kami,</p>
+                                ${signatureImageBase64 ? `<p><img src="${signatureImageBase64}" width="150" height="75" /></p>` : '<br/><br/><br/>'}
+                                <p><b>${marketingPerson.name}</b></p>
+                                <p><i>${marketingPerson.title}</i></p>
+                                <p>${marketingPerson.phone}</p>
+                            </div>
+                            `: ''}
                         </div>
-                        <br/><br/>
-                        <div>
-                            <p>Kepada Yth.:</p>
-                            <p><b>${quotation.customer.name.toUpperCase()}</b></p>
-                            <p style="white-space: pre-wrap;">${quotation.customer.address}</p><br/>
-                            <p>Telepon: <b>${quotation.customer.phone}</b></p>
-                        </div>
-                        <br/><br/>
-                        <div>
-                            <p><u><b>Perihal: Penawaran Harga</b></u></p>
-                            <p>Proyek: ${quotation.projectName}</p>
-                        </div>
-                        <br/><br/>
-                        <p>Dengan hormat,</p>
-                        <p>Menindaklanjuti permohonan penawaran harga resmi kami untuk proyek tersebut, maka bersama ini saya kirimkan harga produk kami sebagai berikut:</p>
-                        <br/>
-                        ${tableHTML}
-                        <br/>
-                        <div>
-                            <h4><b>Kondisi Penawaran :</b></h4>
-                            <div style="padding-left: 1rem; white-space: pre-wrap; font-size: 9pt;">${quotation.conditions.replace(/\n/g, '<br/>')}</div>
-                        </div>
-                        <br/>
-                        <div>
-                            <h4><b>Metode Pembayaran :</b></h4>
-                            <div style="padding-left: 1rem; white-space: pre-wrap; font-size: 9pt;">${quotation.paymentMethod.replace(/\n/g, '<br/>')}</div>
-                        </div>
-                        <br/>
-                        <p>Penawaran harga ini berlaku sampai dengan tanggal <b>${this.formatDate(quotation.validUntil)}</b>.</p><br/>
-                        <p>Demikian penawaran harga ini kami sampaikan. Atas perhatian dan kerjasamanya kami ucapkan terima kasih.</p>
-                        <br/><br/>
-                        ${marketingPerson ? `
-                        <div>
-                            <p>Hormat kami,</p>
-                            ${signatureImageBase64 ? `<p><img src="${signatureImageBase64}" width="150" height="75" /></p>` : '<br/><br/><br/>'}
-                            <p><b>${marketingPerson.name}</b></p>
-                            <p><i>${marketingPerson.title}</i></p>
-                            <p>${marketingPerson.phone}</p>
-                        </div>
-                        `: ''}
                     </body></html>
                 `;
-
-                const fileBuffer = await htmlToDocx.asBlob(contentHtml);
-                const url = URL.createObjectURL(fileBuffer);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `${quotation.number.replace(/\//g, '-')}.docx`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }
+            },
         };
         document.addEventListener('DOMContentLoaded', () => { app.init(); });
     </script>
